@@ -14,7 +14,8 @@ the root spec).
   heuristic, reads Blockscout's public Base API), `attestation/` (x402-SAP:
   EAS schema registration, fulfillment/dispute attestations), `lib/`
   (env/config, viem chain clients, SQLite persistence, EAS/ethers signer,
-  Foundry-keystore decryption).
+  Foundry-keystore decryption, `geoBlock.ts` + `geo-data/` for jurisdiction
+  blocking).
 - `sdk/` — `vouch402-sdk` (npm), the TypeScript client library. `cli/` and
   `mcp-server/` both depend on it rather than duplicating payment-flow code.
 - `cli/` — `vouch402` (npm), `vouch402 score <address>` from a terminal.
@@ -64,6 +65,23 @@ assuming what's live on npm.
   Foundry keystore (`cast wallet import`/`new`) via
   `ethers.Wallet.fromEncryptedJsonSync`; see `src/lib/keystore.ts` and
   `cli/src/keystore.ts`.
+- **Jurisdiction blocklist, not an allowlist.** Open to everyone by
+  default; closed only where there's a documented, specific legal reason.
+  Tier 1 (OFAC comprehensive-sanctions jurisdictions, plus mainland China
+  on its own separate legal basis; Mexico is deliberately on neither
+  tier, see the pending LFPIORPI review in `/legal` section 4 instead) is
+  hard-blocked two ways, neither alone sufficient: IP-level
+  (`src/lib/geoBlock.ts`, data in `src/lib/geo-data/`) and contractually,
+  via a required `jurisdictionAttestation: true` field/flag on every
+  paid-endpoint call site (`X-PAYMENT` payload, SDK, CLI
+  `--attest-jurisdiction`, MCP server, and the website's Try It
+  checkbox). Any new client surface that can reach `/v1/risk-score` must
+  carry this field too, or it will be rejected server-side. Tier 2 is
+  documented only in `/legal` section 5, not blocked. Full legal basis
+  and live verification: `DECISION_LOG.md`, "Two-tier jurisdiction
+  blocklist." This is a different kind of gate than the Buró de Crédito
+  rule (also in `DECISION_LOG.md`): an ordinary who-can-be-our-customer
+  compliance decision, not a verdict about a third party.
 
 ## Commands
 
