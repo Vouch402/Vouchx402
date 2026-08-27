@@ -68,6 +68,20 @@ with the repro and the diff-level explanation of the gap. Concretely
 real for this project too, not just upstream: `cli/README.md` documented
 the broken command form and had to be fixed to the working one.
 
+A maintainer, riba2534, opened
+[foundry-rs/foundry#16219](https://github.com/foundry-rs/foundry/pull/16219)
+to fix it. Review caught two real edge cases before merge: a Windows
+drive-relative path prefix (`C:foo`), then — flagged by maintainer
+figtracer — a bare name containing `:` (`foo:bar`), which on Windows is
+alternate-data-stream syntax and could silently write the keystore into
+a hidden stream, losing the key. Built the fix branch and re-ran the
+original repro to confirm it holds — see `DECISION_LOG.md`, "built the
+fix branch and re-ran the original `cast wallet new` repro." As of
+2026-08-27 the PR is open and unmerged: new commits reset the two prior
+maintainer approvals (GitHub does this automatically on push), so it's
+waiting on fresh re-approval plus a CI run still gated behind fork-PR
+workflow approval — nothing left in it Vouch402 can act on.
+
 ## How it works
 
 ```
