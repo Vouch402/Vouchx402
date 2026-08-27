@@ -239,7 +239,7 @@
         },
         "foundry": {
           "link": "foundry-rs/foundry#16209",
-          "description": "cast wallet new <name> falla con un nombre de cuenta a secas, a diferencia de cast wallet import <name>, que guarda en el directorio de keystores por defecto de la misma forma. El issue que rastreaba exactamente este hueco se había cerrado como completado contra un fix que no lo cubría. La propia documentación del CLI de este proyecto tenía el comando roto documentado y también hubo que arreglarla."
+          "description": "cast wallet new <name> falla con un nombre de cuenta a secas, a diferencia de cast wallet import <name>, que guarda en el directorio de keystores por defecto de la misma forma. El issue que rastreaba exactamente este hueco se había cerrado como completado contra un fix que no lo cubría. La propia documentación del CLI de este proyecto tenía el comando roto documentado y también hubo que arreglarla. Un maintainer abrió un fix (foundry-rs/foundry#16219); la revisión encontró un caso real de Windows (los dos puntos en el nombre son sintaxis de alternate-data-stream) antes de mergear. Se compiló esa rama y se repitió el repro original para confirmarlo. Sigue abierto, a la espera de nueva aprobación de maintainers y de un CI bloqueado por ser PR de fork."
         }
       },
       "packages": {

@@ -2882,3 +2882,115 @@ homepage Try It demo: confirmed the jurisdiction checkbox renders
 unchecked by default, becomes checked on click, and the inline legal
 link resolves to `/legal#5-restricted-jurisdictions`, the exact anchor
 the section renders under.
+
+## 2026-08-27: `foundry-rs/foundry`#16219 — built the fix branch and re-ran the original `cast wallet new` repro
+
+Follow-up on the `cast wallet new <name>` finding
+([foundry-rs/foundry#16209](https://github.com/foundry-rs/foundry/issues/16209),
+2026-08-15 entry above). A maintainer, riba2534, had opened
+[foundry-rs/foundry#16219](https://github.com/foundry-rs/foundry/pull/16219)
+to fix it. Rather than trust the diff on paper, re-checked the PR's live
+state and built the fix branch to re-run the exact repro.
+
+**Live state, verified via `gh pr view 16219 --repo foundry-rs/foundry`
+and `gh api .../status` (not the earlier captured summary):** `OPEN`,
+`mergeStateStatus: BLOCKED`, `reviewDecision: REVIEW_REQUIRED`. The
+branch went through two real review rounds — a Windows drive-relative
+path prefix (`C:foo`) caught first, then maintainer figtracer flagging
+that a bare name containing `:` (`foo:bar`) is Windows alternate-data-
+stream syntax, so treating it as an account name could silently write
+the keystore into a hidden stream while `wallet list`/load see only an
+empty file, losing the key. riba2534's commit `40872d1` rejects any `:`
+in bare names, which reset both prior maintainer approvals (GitHub does
+this automatically on new commits — not a re-review requested by
+anyone). Combined status for `40872d1`: `pending`, 0 status checks run
+— the fork-PR CI workflow is still gated behind maintainer approval, not
+something either side of this project can trigger. No activity on the
+PR since 2026-08-18T13:28:34Z (9 days quiet as of this entry).
+
+**Build friction, disclosed in full rather than skipped over**: this
+Windows dev machine turned out to have neither Visual Studio Build
+Tools nor a complete MinGW-w64 toolchain installed, so `cast` could not
+be linked natively here at all — four attempts made that concrete
+before giving up on it:
+
+1. `cargo build -p cast --bin cast` failed immediately: `cast` is
+   ambiguous between the workspace binary (`cast@1.8.0`) and an
+   unrelated crates.io numeric-formatting crate also named `cast`
+   (`cast@0.3.0`), pulled in transitively. Fixed by pinning
+   `-p cast@1.8.0`.
+2. That build failed with `dlltool.exe: program not found` and a
+   Windows-style `/STACK:10000000` rustflag rejected by a GNU-style
+   `ld` — traced to `C:\ProgramData\chocolatey\bin\rustc.exe` reporting
+   `host: x86_64-pc-windows-gnu` (confirmed via
+   `rustc --version --verbose`), despite being what plain `cargo`/`rustc`
+   resolve to first on `PATH`.
+3. Switching to the rustup-managed toolchain
+   (`~/.rustup/toolchains/stable-x86_64-pc-windows-msvc`, updated
+   1.92→1.98 to satisfy `solar-*`'s `rustc 1.96` floor) and forcing
+   `--target x86_64-pc-windows-msvc` hit `error[E0463]: can't find crate
+   for core` — `rustup run <toolchain>` on this install appends the
+   toolchain's `bin/` near the *end* of `PATH` instead of prepending it
+   (confirmed with `rustup run ... bash -c 'echo $PATH'`), so it was
+   still resolving chocolatey's binaries underneath.
+4. Calling the toolchain's `cargo.exe`/`rustc.exe` by absolute path
+   got past that, but then failed linking `serde`'s build script with
+   `link: extra operand '...'` — a GNU-coreutils-style error message,
+   meaning `link` resolved to Git Bash's own hardlink utility
+   (`/usr/bin/link`), not MSVC's linker. `find`-ing for the real
+   `link.exe` under either `Program Files` or `Program Files (x86)`
+   Visual Studio install roots returned nothing: **no MSVC Build Tools
+   are installed on this machine at all**, so the `x86_64-pc-windows-msvc`
+   target could never have linked here regardless of which `rustc` won
+   the `PATH` race.
+
+Rather than install a multi-GB toolchain to test a one-line CLI fix,
+built inside WSL instead (Ubuntu, already present on this machine, with
+a real `gcc`/`libssl-dev`/`pkg-config`) — `cast v1.8.0` built clean in
+6m07s, no further errors. Confirmed first that this is a valid way to
+verify the fix at all: `is_bare_account_name()` in
+`crates/cast/src/cmd/wallet/mod.rs` rejects `:` unconditionally, not
+behind `cfg(windows)`, so a Linux build exercises the exact same logic
+path the Windows ADS finding concerns.
+
+**The three repro commands, each with `$HOME` pointed at a scratch
+directory so nothing touched this project's real
+`~/.foundry/keystores/`** (independently confirmed clean afterward —
+still only `throwaway-test` and `vouch402-deployer`, same as the
+2026-08-15 entry left it):
+
+```
+$ cast wallet new my-wallet --unsafe-password "x"
+Created new encrypted keystore file: /tmp/tmp.CLEAN1/.foundry/keystores/my-wallet
+Address:    0xBA762B5b13675AA1a2cDab1C721dD841A0a4Eb5D
+exit code: 0
+```
+Matches `cast wallet import`'s behavior — the original ask in #16209.
+
+```
+$ cast wallet new "foo:bar" --unsafe-password "x"
+Error: If you specified a directory, please make sure it exists, or create it before running `cast wallet new <DIR>`.
+foo:bar is not a directory.
+Error: No such file or directory (os error 2)
+exit code: 1
+```
+Rejected outright; `ls ~/.foundry/keystores/` afterward showed only the
+`my-wallet` file from the first test — nothing named `foo`, `bar`, or
+`foo:bar` was ever written. Confirms figtracer's fix: the value never
+reaches the account-name fallback that would have produced an
+ADS-vulnerable path on real Windows.
+
+```
+$ cast wallet new /tmp/tmp.VSRlUGPzYH --unsafe-password "x"   # an existing file, not a directory
+Error: `/tmp/tmp.VSRlUGPzYH` is not a directory
+exit code: 1
+```
+Unchanged from pre-fix behavior — no regression on the existing
+"resolves, but isn't a directory" case.
+
+All three match the PR's stated intent exactly. Updated `README.md`'s
+Ecosystem contributions section and the pitch deck's Ecosystem slide
+(`web/messages/en.json`/`es.json`) to describe the PR and its real
+current state — open, unmerged, waiting on maintainer re-approval and a
+fork-gated CI run — rather than leave it undocumented past the original
+issue filing.
