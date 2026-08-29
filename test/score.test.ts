@@ -8,7 +8,7 @@ import { scoreFromSignals, type RiskSignals } from "../src/scoring/score";
  * file in this repo.
  */
 describe("scoreFromSignals", () => {
-  const fresh: RiskSignals = { walletAgeDays: 0, txCount: 0, uniqueContractInteractions: 0, flagged: false };
+  const fresh: RiskSignals = { walletAgeDays: 0, txCount: 0, uniqueContractInteractions: 0, flagged: false, tokenizedEquityExposure: [] };
 
   it("scores a brand-new, inactive wallet at maximum risk", () => {
     expect(scoreFromSignals(fresh)).toBe(100);
@@ -20,6 +20,7 @@ describe("scoreFromSignals", () => {
       txCount: 500,
       uniqueContractInteractions: 50,
       flagged: false,
+      tokenizedEquityExposure: [],
     };
     expect(scoreFromSignals(established)).toBe(0);
   });
@@ -30,6 +31,7 @@ describe("scoreFromSignals", () => {
       txCount: 500,
       uniqueContractInteractions: 50,
       flagged: true,
+      tokenizedEquityExposure: [],
     };
     expect(scoreFromSignals(establishedButFlagged)).toBeGreaterThanOrEqual(95);
   });
@@ -40,6 +42,7 @@ describe("scoreFromSignals", () => {
       txCount: 1_000_000,
       uniqueContractInteractions: 1_000_000,
       flagged: false,
+      tokenizedEquityExposure: [],
     };
     const score = scoreFromSignals(extreme);
     expect(score).toBeGreaterThanOrEqual(0);
@@ -49,26 +52,36 @@ describe("scoreFromSignals", () => {
   it("no single signal alone can reach minimum risk (each is capped)", () => {
     // Only wallet age, nothing else: age alone caps at 40 trust points,
     // so risk can't drop below 60 from age alone.
-    const ageOnly: RiskSignals = { walletAgeDays: 10_000, txCount: 0, uniqueContractInteractions: 0, flagged: false };
+    const ageOnly: RiskSignals = { walletAgeDays: 10_000, txCount: 0, uniqueContractInteractions: 0, flagged: false, tokenizedEquityExposure: [] };
     expect(scoreFromSignals(ageOnly)).toBeGreaterThanOrEqual(60);
 
     // Only tx count: caps at 30 trust points, risk can't drop below 70.
-    const activityOnly: RiskSignals = { walletAgeDays: 0, txCount: 10_000, uniqueContractInteractions: 0, flagged: false };
+    const activityOnly: RiskSignals = { walletAgeDays: 0, txCount: 10_000, uniqueContractInteractions: 0, flagged: false, tokenizedEquityExposure: [] };
     expect(scoreFromSignals(activityOnly)).toBeGreaterThanOrEqual(70);
 
     // Only contract diversity: caps at 30 trust points, risk can't drop below 70.
-    const diversityOnly: RiskSignals = { walletAgeDays: 0, txCount: 0, uniqueContractInteractions: 10_000, flagged: false };
+    const diversityOnly: RiskSignals = { walletAgeDays: 0, txCount: 0, uniqueContractInteractions: 10_000, flagged: false, tokenizedEquityExposure: [] };
     expect(scoreFromSignals(diversityOnly)).toBeGreaterThanOrEqual(70);
   });
 
   it("is monotonically non-increasing in each signal (more trust signal never raises risk)", () => {
-    const low = scoreFromSignals({ walletAgeDays: 10, txCount: 5, uniqueContractInteractions: 2, flagged: false });
-    const higherAge = scoreFromSignals({ walletAgeDays: 50, txCount: 5, uniqueContractInteractions: 2, flagged: false });
-    const higherTxCount = scoreFromSignals({ walletAgeDays: 10, txCount: 20, uniqueContractInteractions: 2, flagged: false });
-    const higherDiversity = scoreFromSignals({ walletAgeDays: 10, txCount: 5, uniqueContractInteractions: 8, flagged: false });
+    const low = scoreFromSignals({ walletAgeDays: 10, txCount: 5, uniqueContractInteractions: 2, flagged: false, tokenizedEquityExposure: [] });
+    const higherAge = scoreFromSignals({ walletAgeDays: 50, txCount: 5, uniqueContractInteractions: 2, flagged: false, tokenizedEquityExposure: [] });
+    const higherTxCount = scoreFromSignals({ walletAgeDays: 10, txCount: 20, uniqueContractInteractions: 2, flagged: false, tokenizedEquityExposure: [] });
+    const higherDiversity = scoreFromSignals({ walletAgeDays: 10, txCount: 5, uniqueContractInteractions: 8, flagged: false, tokenizedEquityExposure: [] });
 
     expect(higherAge).toBeLessThanOrEqual(low);
     expect(higherTxCount).toBeLessThanOrEqual(low);
     expect(higherDiversity).toBeLessThanOrEqual(low);
+  });
+
+  it("tokenizedEquityExposure never affects the score, in either direction (Buró de Crédito rule: a named fact, not a risk input)", () => {
+    const base: RiskSignals = { walletAgeDays: 30, txCount: 10, uniqueContractInteractions: 3, flagged: false, tokenizedEquityExposure: [] };
+    const withExposure: RiskSignals = { ...base, tokenizedEquityExposure: ["NVDAc", "TSLAc", "AAPLc"] };
+    expect(scoreFromSignals(withExposure)).toBe(scoreFromSignals(base));
+
+    const flaggedBase: RiskSignals = { ...base, flagged: true };
+    const flaggedWithExposure: RiskSignals = { ...flaggedBase, tokenizedEquityExposure: ["MSTRc"] };
+    expect(scoreFromSignals(flaggedWithExposure)).toBe(scoreFromSignals(flaggedBase));
   });
 });

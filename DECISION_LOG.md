@@ -3161,3 +3161,70 @@ against the real `src/server/app.ts` error text and this entry's own
 live curl before committing it (separately, since it's an unrelated
 pre-existing fix, not part of today's publish task) — see its own commit
 message for detail.
+
+## 2026-08-29: New signal, `tokenizedEquityExposure` — Coinbase's tokenized US equities on Base, for the Base Batches 004 application
+
+Driven by a real deadline: Coinbase launched tokenized US equities on
+Base on 2026-08-24 (backed 1:1 via Alpaca custody, priced via
+Chainlink), and Base Batches 004 ($100K accelerator) has "agents" and
+"asset issuance" as explicit focus areas, applications closing
+2026-09-09.
+
+**Contract addresses, confirmed before writing a line of code, not
+assumed**: initial press coverage (Coindesk, FinanceFeeds, dated
+2026-08-24/25) reported only 4 tickers at launch (NVDAc, METAc, AAPLc,
+GOOGLc), which almost got reported back as the ceiling. `docs.base.org`
+(the primary source, not press) already listed 13. Cross-checked all 13
+directly against Base mainnet via a live `eth_call` to `symbol()` on
+each address — not just trusted from the docs page — and all 13
+returned their exact expected ticker, zero mismatches:
+AAPLc/AMZNc/COINc/CRCLc/GOOGLc/INTCc/METAc/MSFTc/MSTRc/NVDAc/SNDKc/
+SPCXc/TSLAc, all `0xb2000...`-prefixed B20 tokens, 8 decimals (not the
+usual 18). Full list with addresses in
+`src/scoring/tokenized-equities.json`, versioned and dated the same way
+`flagged-addresses.json` already is. Base mainnet only — these tokens
+don't exist on Base Sepolia, the default dev network.
+
+**Design, checked line-by-line against the "Buró de Crédito" rule
+(2026-08-16 entry above) before writing code, per explicit instruction**:
+a new `tokenizedEquityExposure: string[]` signal —tickers this address
+currently holds a nonzero balance of, or has ever sent/received a
+transaction with, among the 13 tokens. Empty array otherwise. No amount,
+no balance value, no distinction between "holds now" vs. "touched once"
+— just the ticker and the bare fact, mirroring why the rest of this API
+never carries a transaction amount (rule 4). Deliberately **excluded**
+from `scoreFromSignals()`: folding it into the score either direction
+would turn "holds real-world-asset exposure" into an implicit verdict,
+exactly what the rule exists to prevent (rule 2) — a new unit test
+(`test/score.test.ts`) asserts the score is byte-identical with and
+without exposure present, including alongside `flagged: true`, so this
+isn't just a comment that can silently rot. Read-only throughout (rule
+1); nothing in the response ever facilitates buying, selling, or
+custodying these tokens, so this doesn't approach the Ley del Mercado de
+Valores / CNBV line the user flagged separately for this feature.
+
+**Implementation**: holdings via one `multicall` (`balanceOf` across all
+13 contracts in a single RPC round-trip, using Base's `multicall3`
+already wired into viem's chain config — not 13 sequential calls, which
+would be slow and prone to the public RPC's rate limits, hit firsthand
+while verifying the contract addresses above). Interactions are derived
+from the transaction history already fetched for `walletAgeDays`/
+`txCount` — no extra network call.
+
+**Verified live against real Base mainnet data, not just "it compiles"**:
+1. `npm run build` — clean, and `npx vitest run test/score.test.ts` —
+   7/7 passing, including the new score-independence test.
+2. A real top holder of NVDAc (`0xb5ef91ce939F2C390cff462bb231E74bb228deB4`,
+   found via Blockscout's own holders endpoint, not guessed) returned
+   `tokenizedEquityExposure: ["AAPLc", "GOOGLc", "METAc", "NVDAc"]` —
+   all four of the original 2026-08-24 launch tickers, none of the later
+   nine, exactly the shape a real early adopter's wallet should show.
+3. A freshly generated, never-used address returned `[]`, `score: 100`
+   (same as before this signal existed) — the negative case, clean.
+4. The same holder address requested on `base-sepolia` returned `[]`
+   immediately. A first attempt used the common burn address
+   (`0x000...dEaD`) as the "clean" negative case and it came back
+   non-empty (`AAPLc`, `GOOGLc`, `NVDAc`) — not a bug: that address is a
+   common transfer sink for many unrelated tokens, so real transfers to
+   it are a true positive, not a false one. Caught before it was
+   reported as a clean-negative result it wasn't.

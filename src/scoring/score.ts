@@ -2,12 +2,31 @@ import { isAddress } from "viem";
 import { publicClientFor } from "../lib/chain";
 import { blockscoutApiBaseFor, type NetworkName } from "../lib/env";
 import flaggedList from "./flagged-addresses.json";
+import tokenizedEquities from "./tokenized-equities.json";
 
 export interface RiskSignals {
   walletAgeDays: number;
   txCount: number;
   uniqueContractInteractions: number;
   flagged: boolean;
+  /**
+   * Tickers (e.g. "NVDAc") among Coinbase's Base-mainnet tokenized-equity
+   * B20 tokens (see tokenized-equities.json) this address currently holds
+   * a nonzero balance of, or has ever sent/received a transaction with —
+   * whichever is true, no distinction kept between the two once matched.
+   * Empty array if neither, always [] on Base Sepolia (these tokens only
+   * exist on mainnet).
+   *
+   * Deliberately excluded from `scoreFromSignals()` below: this is a
+   * named fact, not a risk input. Folding it into the score either
+   * direction would turn "holds real-world-asset exposure" into an
+   * implicit verdict ("this address is more/less trustworthy"), which is
+   * exactly what the Buró de Crédito rule (DECISION_LOG.md, 2026-08-16)
+   * exists to prevent. No balance/amount is ever included, only the
+   * ticker and the bare fact of exposure — same reasoning as why the
+   * rest of this API never carries a transaction amount.
+   */
+  tokenizedEquityExposure: string[];
 }
 
 export interface RiskResult {
@@ -54,6 +73,65 @@ function isFlagged(address: string): boolean {
   return (flaggedList.addresses as string[]).some((a) => a.toLowerCase() === lower);
 }
 
+const balanceOfAbi = [
+  { name: "balanceOf", type: "function", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] },
+] as const;
+
+/**
+ * Tickers this address currently holds a nonzero balance of, among
+ * Coinbase's Base-mainnet tokenized-equity tokens. Read-only `balanceOf`
+ * multicall (Base's `multicall3` is wired into viem's chain config, so
+ * this is one RPC round-trip for all 13 tokens, not 13). `base-sepolia`
+ * always returns [] immediately: these tokens don't exist there, and
+ * calling into addresses with no code on testnet would just waste a
+ * round-trip for a result we already know.
+ */
+async function tokenizedEquityHoldingsFor(
+  network: NetworkName,
+  address: string
+): Promise<string[]> {
+  if (network !== "base") return [];
+
+  const client = publicClientFor(network);
+  const results = await client.multicall({
+    contracts: tokenizedEquities.tokens.map((t) => ({
+      address: t.address as `0x${string}`,
+      abi: balanceOfAbi,
+      functionName: "balanceOf",
+      args: [address as `0x${string}`],
+    })),
+    allowFailure: true,
+  });
+
+  const held: string[] = [];
+  results.forEach((r, i) => {
+    if (r.status === "success" && (r.result as bigint) > 0n) {
+      held.push(tokenizedEquities.tokens[i].ticker);
+    }
+  });
+  return held;
+}
+
+/**
+ * Tickers this address has ever sent or received a transaction with,
+ * derived from the same tx history already fetched for `txCount`/
+ * `walletAgeDays` — no extra network call. `base-sepolia` always returns
+ * [] (see `tokenizedEquityHoldingsFor` above; same reasoning).
+ */
+function tokenizedEquityInteractionsFrom(network: NetworkName, history: ExplorerTx[]): string[] {
+  if (network !== "base") return [];
+
+  const byAddress = new Map(tokenizedEquities.tokens.map((t) => [t.address.toLowerCase(), t.ticker]));
+  const matched = new Set<string>();
+  for (const tx of history) {
+    const toTicker = tx.to && byAddress.get(tx.to.toLowerCase());
+    if (toTicker) matched.add(toTicker);
+    const fromTicker = tx.from && byAddress.get(tx.from.toLowerCase());
+    if (fromTicker) matched.add(fromTicker);
+  }
+  return [...matched];
+}
+
 /**
  * Pure scoring formula, deliberately separated from the network-fetching
  * logic below so it's unit-testable without an RPC/BaseScan dependency;
@@ -90,9 +168,10 @@ export async function computeRiskScore(network: NetworkName, address: string): P
 
   const client = publicClientFor(network);
 
-  const [txCount, history] = await Promise.all([
+  const [txCount, history, tokenizedEquityHoldings] = await Promise.all([
     client.getTransactionCount({ address: address as `0x${string}` }),
     fetchTxHistory(network, address),
+    tokenizedEquityHoldingsFor(network, address),
   ]);
 
   let walletAgeDays = 0;
@@ -111,7 +190,16 @@ export async function computeRiskScore(network: NetworkName, address: string): P
 
   const flagged = isFlagged(address);
 
-  const signals: RiskSignals = { walletAgeDays, txCount, uniqueContractInteractions, flagged };
+  const tokenizedEquityInteractions = tokenizedEquityInteractionsFrom(network, history);
+  const tokenizedEquityExposure = [...new Set([...tokenizedEquityHoldings, ...tokenizedEquityInteractions])].sort();
+
+  const signals: RiskSignals = {
+    walletAgeDays,
+    txCount,
+    uniqueContractInteractions,
+    flagged,
+    tokenizedEquityExposure,
+  };
 
   return { score: scoreFromSignals(signals), signals };
 }
