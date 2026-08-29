@@ -1,0 +1,23 @@
+{
+  "version": "2026-08-29",
+  "lastUpdated": "2026-08-29",
+  "network": "base",
+  "source": "https://www.base.org/stocks and https://docs.base.org/base-chain/asset-issuance/tokenized-stocks-on-base, cross-checked against docs.chain.link's Coinbase tokenized-equity feed listing",
+  "verification": "Every address below was independently confirmed live on Base mainnet before being bundled: an eth_call to symbol() on each returned the exact ticker listed (e.g. NVDAc -> \"NVDAc\"), not just trusted from the docs page. Re-run that check (or watch the B20Created event on the onchain registry, 0x3f3E8cf41cdd3b1D118c16471aB0113DfDDd5CaD) before trusting this file after a long gap -- Coinbase has already expanded this list once (4 tickers at the 2026-08-24 launch, 13 within days).",
+  "note": "Base mainnet only -- these tokens do not exist on Base Sepolia, so any lookup against this list is skipped entirely on testnet. All 13 are B20 tokens with 8 decimals (not the usual 18).",
+  "tokens": [
+    { "ticker": "AAPLc", "address": "0xb200000000000000000000C2e324d24d7eEcd1fb" },
+    { "ticker": "AMZNc", "address": "0xb200000000000000000000d9192b6B456483C2E8" },
+    { "ticker": "COINc", "address": "0xb200000000000000000000c85a31389D71F3ecfb" },
+    { "ticker": "CRCLc", "address": "0xB20000000000000000000019f6E7C675b73C2e4D" },
+    { "ticker": "GOOGLc", "address": "0xb2000000000000000000002D0BA3164cc74f58B7" },
+    { "ticker": "INTCc", "address": "0xB2000000000000000000004AFF16039bA04bdFBc" },
+    { "ticker": "METAc", "address": "0xb2000000000000000000008bC8786B856E61707C" },
+    { "ticker": "MSFTc", "address": "0xB200000000000000000000Ab99cFa739E253872B" },
+    { "ticker": "MSTRc", "address": "0xb2000000000000000000004884b426556b92883d" },
+    { "ticker": "NVDAc", "address": "0xb20000000000000000000078ee7ce2fE4908108C" },
+    { "ticker": "SNDKc", "address": "0xb200000000000000000000397293Cb8cda9a10c5" },
+    { "ticker": "SPCXc", "address": "0xb2000000000000000000007b9fcbd005511aCBd5" },
+    { "ticker": "TSLAc", "address": "0xb2000000000000000000001e800a7f5189430cD0" }
+  ]
+}
