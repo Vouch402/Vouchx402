@@ -3090,3 +3090,74 @@ closed-against-an-incomplete-fix history, this project's own broken CLI
 docs, figtracer's Windows/ADS catch (figtracer *is* `MEMBER`, verified
 above, so "flagged by maintainer figtracer" stands unchanged), and the
 build-and-repro verification all check out as originally written.
+
+## 2026-08-29: Published `vouch402-sdk`/`vouch402`/`vouch402-mcp-server` 0.3.0 — the currently-published 0.2.0 line couldn't complete a paid request against production at all
+
+**Why this was more urgent than a version-pin gap**: while contrasting the
+published 0.2.0 tarballs against this repo's real state (user's own
+request, cross-checking real downloaded packages against the source),
+found that production (`vouch402.fly.dev`) already strictly enforces the
+`jurisdictionAttestation` field added for the two-tier jurisdiction
+blocklist (`d9e6a30`, 2026-08-16) — confirmed live with a spoofed
+`X-PAYMENT` proof missing the field: `403 Missing required jurisdiction
+attestation` (safe to test with a garbage `resourceId`/`txHash` since
+that check runs *before* `verifyPayment` in `src/server/app.ts`, no real
+funds needed). Downloaded and unpacked the actual published
+`vouch402-sdk@0.2.0`, `vouch402@0.2.0`, and `vouch402-mcp-server@0.2.0`
+tarballs from the registry: none of the three had any mention of
+`jurisdictionAttestation` anywhere in their compiled output or type
+declarations. Concretely, not hypothetically: `pay()` still works (a raw
+on-chain USDC transfer, unrelated to this field), but `fetchScore()` /
+`getRiskScore()` always hit the 403 on retry, with no parameter anywhere
+in the published SDK's public API to supply the field. Every real user
+of the published 0.2.0 line was paying real USDC for a call that could
+never complete.
+
+The repo's own `package.json`s (root, `sdk/`, `cli/`, `mcp-server/`) had
+already been bumped to `0.3.0` on 2026-08-16 for exactly this breaking
+change (per project memory/history), plus the `eas-sdk` bump to
+`^2.10.0` from the 2026-08-29 entry above — the gap was purely that this
+already-correct source had never been published. No further code change
+was needed; this was a pure publish task.
+
+**Published** (user ran the commands, this session had verified there
+were no npm credentials available in-environment beforehand —
+`npm whoami` → `401`):
+
+```bash
+cd sdk && npm run build && npm publish
+cd ../cli && npm run build && npm publish
+cd ../mcp-server && npm run build && npm publish
+```
+
+**Verified after, four independent ways, not just trusting the publish
+output**:
+1. `npm view <pkg> version` live for all three → `0.3.0`.
+2. `npm view vouch402-sdk@0.3.0 gitHead` → `b048edb940dc481b053f09abc7b2a70ae22af274`
+   for all three packages, exactly matching local `HEAD` at publish
+   time — published from the real, current source, not a stale branch.
+3. Downloaded and unpacked the real `vouch402-sdk@0.3.0` tarball:
+   `dist/client.d.ts`/`dist/types.d.ts` now declare
+   `jurisdictionAttestation: boolean` as required, and `dependencies`
+   shows `@ethereum-attestation-service/eas-sdk: ^2.10.0`.
+4. Re-ran the exact repro that had failed before, this time with
+   `jurisdictionAttestation: true` on the spoofed proof: the 403 gate no
+   longer triggers, the request reaches the next real check
+   (`402 Unknown or expired resourceId`, expected for a fabricated
+   payment) — end-to-end confirmation the fix that was broken in 0.2.0
+   now actually works in what's live on the registry.
+
+**Immediate follow-up, same session**: `README.md`'s "published on npm
+at `0.2.0`" line was stale, fixed to `0.3.0`. Checked the site/pitch
+deck itself for anything else needing a version bump — nothing: the
+npm-packages slide only links to the live npm pages, no hardcoded
+version anywhere in `web/src`. Separately, while checking for other
+drift, found `plugins/vouch402.md` had a correct, finished
+`jurisdictionAttestation` documentation update sitting **uncommitted**
+in the working tree since before this — this file's last real commit
+predates the jurisdiction-blocklist feature landing, so this write-up
+had been exposed to accidental loss the whole time. Verified its content
+against the real `src/server/app.ts` error text and this entry's own
+live curl before committing it (separately, since it's an unrelated
+pre-existing fix, not part of today's publish task) — see its own commit
+message for detail.
