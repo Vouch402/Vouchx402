@@ -12,7 +12,7 @@ Also available as a Base MCP plugin (or will be, once the upstream
 
 ## Client packages
 
-Three thin wrappers over this same API, all published on npm at `0.2.0`
+Three thin wrappers over this same API, all published on npm at `0.3.0`
 (see `DECISION_LOG.md` for status):
 
 - [`sdk/`](sdk): [`vouch402-sdk`](https://www.npmjs.com/package/vouch402-sdk),
