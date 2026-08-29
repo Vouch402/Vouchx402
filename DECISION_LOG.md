@@ -2995,15 +2995,17 @@ current state — open, unmerged, waiting on maintainer re-approval and a
 fork-gated CI run — rather than leave it undocumented past the original
 issue filing.
 
-## 2026-08-29: `eas-sdk#132` fixed and released as 2.10.0 — compatibility checked before bumping, not after
+## 2026-08-29: `eas-sdk#132` closed as completed, fixed and released as 2.10.0 — compatibility checked before bumping, not after
 
 Follow-up on the resolver-forged-UID finding
 ([eas-sdk#132](https://github.com/ethereum-attestation-service/eas-sdk/issues/132),
 2026-08-15 entry above). The maintainer fixed and shipped it; confirmed
-live via `npm view @ethereum-attestation-service/eas-sdk dist-tags`:
-`latest` is `2.10.0`, matching the user's own independent confirmation
-(downloaded the published package, read the compiled output, not just
-the maintainer's closing comment).
+live two ways, not just the maintainer's own closing comment: `gh issue
+view 132 --repo ethereum-attestation-service/eas-sdk` returns
+`state: CLOSED`, `stateReason: COMPLETED`, `closedAt: 2026-08-27T19:49:29Z`,
+and `npm view @ethereum-attestation-service/eas-sdk dist-tags` shows
+`latest: 2.10.0` — matching the user's own independent confirmation
+(downloaded the published package, read the compiled output).
 
 **Why this needed a real check, not just a version bump**: 2.10.0 is
 described as moving five receipt/UID helpers —

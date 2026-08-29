@@ -55,9 +55,13 @@ result. Vouch402 itself isn't affected (no resolver, no `multiAttest()`
 calls) — this is a library-level finding reported upstream, not a gap
 in this project.
 
-Fixed and released as
+**Closed as completed** by the maintainer on 2026-08-27, fixed and
+released as
 [eas-sdk 2.10.0](https://www.npmjs.com/package/@ethereum-attestation-service/eas-sdk/v/2.10.0)
-(`latest` on npm as of 2026-08-29). The release moves five receipt/UID
+(`latest` on npm as of 2026-08-29) — confirmed live via
+`gh issue view 132 --repo ethereum-attestation-service/eas-sdk`
+(`state: CLOSED`, `stateReason: COMPLETED`), not just the maintainer's
+own closing comment. The release moves five receipt/UID
 helpers off `utils` onto the `EAS` class and changes
 `EIP712Proxy.getEAS()`'s return type from `Promise<string>` to
 `Promise<EAS>` — a real migration for anyone importing the old exports,

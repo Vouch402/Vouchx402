@@ -235,7 +235,7 @@
         "docsLabel": "Docs/UX bug",
         "easSdk": {
           "link": "eas-sdk#132",
-          "description": "eas-sdk's receipt-parsing helpers match event logs by signature only, not by which contract emitted them, so a schema's resolver can inject a forged UID into multiAttest()'s result. Vouch402 itself isn't exposed: no resolver, no multiAttest() calls. Fixed and released as eas-sdk 2.10.0, a real migration for callers of the moved exports. Checked first: this codebase only imports EAS, SchemaRegistry, SchemaEncoder, and the ZERO_* constants, never the moved helpers or EIP712Proxy, so the bump was a no-op — verified by a clean build after upgrading, not just by reading the diff."
+          "description": "eas-sdk's receipt-parsing helpers match event logs by signature only, not by which contract emitted them, so a schema's resolver can inject a forged UID into multiAttest()'s result. Vouch402 itself isn't exposed: no resolver, no multiAttest() calls. Closed as completed by the maintainer, fixed and released as eas-sdk 2.10.0 — a real migration for callers of the moved exports. Checked first: this codebase only imports EAS, SchemaRegistry, SchemaEncoder, and the ZERO_* constants, never the moved helpers or EIP712Proxy, so the bump was a no-op — verified by a clean build after upgrading, not just by reading the diff."
         },
         "foundry": {
           "link": "foundry-rs/foundry#16209",
