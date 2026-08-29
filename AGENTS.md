@@ -90,6 +90,16 @@ assuming what's live on npm.
   blocklist." This is a different kind of gate than the Buró de Crédito
   rule (also in `DECISION_LOG.md`): an ordinary who-can-be-our-customer
   compliance decision, not a verdict about a third party.
+- **Tokenized-equity data stays read-only, never facilitation.**
+  Coinbase's tokenized US-stock tokens on Base
+  (`src/scoring/tokenized-equities.json`) sit under Mexico's securities-
+  market law (Ley del Mercado de Valores / CNBV) on top of LFPIORPI — a
+  stricter regime than the Buró de Crédito rule alone already covers.
+  Any feature touching these specific tokens stays query-only, same as
+  everything else in this API; anything that reads as facilitating
+  buying, selling, or custodying them, even unintentionally, is out of
+  scope — stop and ask before building it, don't build first and check
+  after. See `DECISION_LOG.md`, "New signal, `tokenizedEquityExposure`."
 
 ## Commands
 
