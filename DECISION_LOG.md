@@ -2887,7 +2887,7 @@ the section renders under.
 
 Follow-up on the `cast wallet new <name>` finding
 ([foundry-rs/foundry#16209](https://github.com/foundry-rs/foundry/issues/16209),
-2026-08-15 entry above). A maintainer, riba2534, had opened
+2026-08-15 entry above). riba2534 had opened
 [foundry-rs/foundry#16219](https://github.com/foundry-rs/foundry/pull/16219)
 to fix it. Rather than trust the diff on paper, re-checked the PR's live
 state and built the fix branch to re-run the exact repro.
@@ -3059,3 +3059,34 @@ deck's Ecosystem slide (`web/messages/en.json`/`es.json`) with the fix
 and the compatibility check. No GitHub action needed on this one — the
 issue's already closed and the maintainer already thanked the user in
 it.
+
+## 2026-08-29: Correction — riba2534 called "a maintainer" in three places, isn't one
+
+Factual error, caught by the user against data this project had already
+pulled with `gh`, not a new lookup: the 2026-08-27 entry above,
+`README.md`'s Ecosystem contributions section, and the pitch deck's
+Ecosystem slide (`web/messages/en.json`/`es.json`) all described
+riba2534 — who opened
+[foundry-rs/foundry#16219](https://github.com/foundry-rs/foundry/pull/16219)
+to fix #16209 — as "a maintainer." Re-verified live before correcting
+anything, not just trusting the catch: `gh api
+repos/foundry-rs/foundry/pulls/16219 --jq '.author_association'` returns
+`NONE` for riba2534, while `gh api
+repos/foundry-rs/foundry/issues/16219/comments` and the PR's own reviews
+show `mablr`, `stevencartavia`, and `figtracer` — the three who actually
+reviewed the fix — all at `MEMBER`. The maintainers reviewed it; they
+didn't open it. Misattributing maintainer status to an external
+contributor understates their actual contribution (opening and
+iterating a real fix through three review rounds as a non-member) by
+folding it into "just doing their job."
+
+Fixed all three: "A maintainer, riba2534, opened..." → "riba2534
+opened..." in `README.md` and this file's 2026-08-27 entry;
+"A maintainer opened a fix (foundry-rs/foundry#16219)" → "A fix was
+opened (foundry-rs/foundry#16219)" in `web/messages/en.json`/`es.json`
+(that description never named riba2534, so no name needed adding).
+Nothing else in the original text needed correction — the
+closed-against-an-incomplete-fix history, this project's own broken CLI
+docs, figtracer's Windows/ADS catch (figtracer *is* `MEMBER`, verified
+above, so "flagged by maintainer figtracer" stands unchanged), and the
+build-and-repro verification all check out as originally written.

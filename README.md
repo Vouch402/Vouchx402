@@ -88,7 +88,7 @@ with the repro and the diff-level explanation of the gap. Concretely
 real for this project too, not just upstream: `cli/README.md` documented
 the broken command form and had to be fixed to the working one.
 
-A maintainer, riba2534, opened
+riba2534 opened
 [foundry-rs/foundry#16219](https://github.com/foundry-rs/foundry/pull/16219)
 to fix it. Review caught two real edge cases before merge: a Windows
 drive-relative path prefix (`C:foo`), then — flagged by maintainer
