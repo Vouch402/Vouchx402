@@ -235,7 +235,7 @@
         "docsLabel": "Bug de docs/UX",
         "easSdk": {
           "link": "eas-sdk#132",
-          "description": "Los helpers de eas-sdk que parsean el receipt hacen match de los event logs solo por firma, no por qué contrato los emitió, así que el resolver de un schema puede inyectar un UID falso en el resultado de multiAttest(). Vouch402 mismo no está expuesto: sin resolver, sin llamadas a multiAttest()."
+          "description": "Los helpers de eas-sdk que parsean el receipt hacen match de los event logs solo por firma, no por qué contrato los emitió, así que el resolver de un schema puede inyectar un UID falso en el resultado de multiAttest(). Vouch402 mismo no está expuesto: sin resolver, sin llamadas a multiAttest(). Arreglado y publicado como eas-sdk 2.10.0, una migración real para quien use las funciones movidas. Se revisó primero: este código solo importa EAS, SchemaRegistry, SchemaEncoder y las constantes ZERO_*, nunca los helpers movidos ni EIP712Proxy, así que el bump fue no-op — verificado con un build limpio después de actualizar, no solo leyendo el diff."
         },
         "foundry": {
           "link": "foundry-rs/foundry#16209",

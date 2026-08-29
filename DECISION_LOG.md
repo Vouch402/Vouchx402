@@ -2994,3 +2994,66 @@ Ecosystem contributions section and the pitch deck's Ecosystem slide
 current state — open, unmerged, waiting on maintainer re-approval and a
 fork-gated CI run — rather than leave it undocumented past the original
 issue filing.
+
+## 2026-08-29: `eas-sdk#132` fixed and released as 2.10.0 — compatibility checked before bumping, not after
+
+Follow-up on the resolver-forged-UID finding
+([eas-sdk#132](https://github.com/ethereum-attestation-service/eas-sdk/issues/132),
+2026-08-15 entry above). The maintainer fixed and shipped it; confirmed
+live via `npm view @ethereum-attestation-service/eas-sdk dist-tags`:
+`latest` is `2.10.0`, matching the user's own independent confirmation
+(downloaded the published package, read the compiled output, not just
+the maintainer's closing comment).
+
+**Why this needed a real check, not just a version bump**: 2.10.0 is
+described as moving five receipt/UID helpers —
+`getUIDFromAttestTx`, `getUIDsFromMultiAttestTx`,
+`getUIDsFromAttestReceipt`, `getTimestampFromTimestampReceipt`,
+`getTimestampFromOffchainRevocationReceipt` — off the package's `utils`
+exports onto the `EAS` class itself, and changing
+`EIP712Proxy.getEAS()`'s return type from `Promise<string>` to
+`Promise<EAS>`. Either pattern, if present in this codebase, breaks on
+upgrade. No urgency either way: the original issue's own scope note
+(written when #132 was filed) already established Vouch402 isn't
+exploitable by the underlying bug — `ZERO_ADDRESS` resolvers only,
+single-schema `attest()` only, never `multiAttest()`.
+
+**Checked before touching `package.json`, across every package in this
+repo** (`grep` for the five names and `EIP712Proxy`/`getEAS(` across
+the whole tree, then confirmed every actual import site by hand):
+
+- Root (`src/`) and `sdk/` are the only two packages that depend on
+  `@ethereum-attestation-service/eas-sdk` directly (`^2.9.1` in both
+  `package.json`s); `cli/` and `mcp-server/` don't declare it — they go
+  through `vouch402-sdk` per this repo's own layering, never call EAS
+  directly.
+- Every import site in the codebase, found via
+  `grep -rn "from ['\"]@ethereum-attestation-service/eas-sdk['\"]"` plus
+  `sdk/src/client.ts`'s CJS `require()` (a documented ESM/lodash
+  interop workaround, not a normal import): `EAS`, `SchemaRegistry`,
+  `SchemaEncoder`, `ZERO_ADDRESS`, `ZERO_BYTES32`. None of the five
+  moved helpers, anywhere.
+- `EIP712Proxy` and `.getEAS(` — zero matches in the entire repo
+  (`src/`, `sdk/`, `cli/`, `mcp-server/`, `web/`, `scripts/`, `test/`).
+  The only two hits for any of the five names at all were prose in
+  `DECISION_LOG.md`/`README.md` describing the *original* #132 finding,
+  not code.
+- Every actual EAS call site in the codebase:
+  `eas.attest({...})` (`src/attestation/dispute.ts`,
+  `src/attestation/middleware.ts`) and `eas.getAttestation(uid)`
+  (`src/lib/eas.ts`) — both ordinary `EAS`-instance methods, unrelated
+  to the moved surface.
+
+**Conclusion: no-op migration.** Bumped `^2.9.1` → `^2.10.0` in both
+`package.json` and `sdk/package.json`, regenerated both lockfiles with
+`npm install` (not hand-edited — confirmed `package-lock.json` and
+`sdk/package-lock.json` both resolve `"version": "2.10.0"` afterward),
+and ran `npm run build` in both the root project and `sdk/`
+(`tsc -p tsconfig.build.json` in each) — both passed clean, zero
+compiler errors, on top of the grep-based check.
+
+Updated `README.md`'s Ecosystem contributions section and the pitch
+deck's Ecosystem slide (`web/messages/en.json`/`es.json`) with the fix
+and the compatibility check. No GitHub action needed on this one — the
+issue's already closed and the maintainer already thanked the user in
+it.

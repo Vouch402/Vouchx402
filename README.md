@@ -55,6 +55,22 @@ result. Vouch402 itself isn't affected (no resolver, no `multiAttest()`
 calls) — this is a library-level finding reported upstream, not a gap
 in this project.
 
+Fixed and released as
+[eas-sdk 2.10.0](https://www.npmjs.com/package/@ethereum-attestation-service/eas-sdk/v/2.10.0)
+(`latest` on npm as of 2026-08-29). The release moves five receipt/UID
+helpers off `utils` onto the `EAS` class and changes
+`EIP712Proxy.getEAS()`'s return type from `Promise<string>` to
+`Promise<EAS>` — a real migration for anyone importing the old exports,
+not just a version bump. Checked before touching the dependency, not
+after: this codebase only ever imports `EAS`, `SchemaRegistry`,
+`SchemaEncoder`, `ZERO_ADDRESS`, `ZERO_BYTES32` from the package, calls
+only `eas.attest()`/`eas.getAttestation()` as instance methods, and
+never touches `EIP712Proxy` at all — none of the moved surface. Bumped
+`^2.9.1` → `^2.10.0` in both `package.json` and `sdk/package.json`
+(regenerated lockfiles via `npm install`, not hand-edited) and confirmed
+both `npm run build`s (root and `sdk/`) still pass clean. See
+`DECISION_LOG.md` for the full compatibility check.
+
 Separately, and of a different, lower-stakes kind — a docs/UX bug, not
 a security finding: while working with `foundry-rs/foundry`'s `cast`
 (the keystore tooling `src/lib/keystore.ts` and `cli/src/keystore.ts`
