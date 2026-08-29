@@ -61,6 +61,14 @@ assuming what's live on npm.
   payer sets `makePublic: true`, or it's the team's own dev/test wallet
   (`src/constants/devWallet.ts`), which is public-by-default. See
   `DECISION_LOG.md`, "Dev wallet shows full results by default."
+- **Outward-facing actions wait for explicit go-ahead, every time.**
+  `git push`, `npm publish`, and any GitHub comment or push to a fork
+  (even the team's own) get prepared/committed and shown first, never
+  sent on inferred approval — sign-off on one doesn't carry over to the
+  next, even a near-identical one minutes later. Verify after with real
+  output (`git rev-list`, `gh api`, a registry read), not just the
+  command's own success message — same standard as "Committed is not
+  live" above, applied to actions outside this repo too.
 - **No raw private keys anywhere.** Every signer path decrypts a standard
   Foundry keystore (`cast wallet import`/`new`) via
   `ethers.Wallet.fromEncryptedJsonSync`; see `src/lib/keystore.ts` and
