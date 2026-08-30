@@ -3299,3 +3299,77 @@ Added the two new env var placeholders to `.env.example`
 per this project's existing convention — the real values live in the
 gitignored `.env` and are recorded here instead, same as the x402-SAP
 schema UIDs above.
+
+## 2026-08-30: Found `github.com/Eras256/Vouchx402` is private — 9 public-facing links across the site were quietly 404ing
+
+Surfaced while verifying the new pitch deck slide's own link (Task 4 of
+the same initiative): a `curl` with no auth against
+`github.com/Eras256/Vouchx402` — the pitch slide's "View the verified
+contract list" link — returned `404`. Confirmed the cause directly
+rather than guessed: `gh api repos/Eras256/Vouchx402 --jq '{private}'`
+returns `true`. A deliberate, unrelated decision (another grant process
+this week), not a bug in the repo setting itself — but every link
+pointing at it from a public-facing surface was broken for any real
+visitor, including a Batches 004 reviewer, while still resolving fine
+for anyone logged in as the owner (which is why it went unnoticed until
+tested with a genuinely anonymous request).
+
+**Full audit, not just the one link that triggered it** — grepped the
+whole `web/src` tree for the repo URL rather than fixing only what
+surfaced first:
+
+- Pitch deck (5 links): the new slide's contract-list link, plus 4
+  pre-existing ones — `pitch-cover.tsx` ("GitHub", "Docs"),
+  `pitch-ecosystem.tsx` (the Base MCP plugin file link), and
+  `pitch-links.tsx` ("GitHub", "Contact via GitHub").
+- Site-wide, found in a second pass after fixing the pitch deck (initial
+  report undercounted — only "License" was flagged in the footer at
+  first, missing that the footer's plain "GitHub" text link shares the
+  same broken URL): `navbar.tsx` ("GitHub" nav button), `footer.tsx`
+  ("GitHub" and "License", two separate links), `hero.tsx` (the
+  secondary "GitHub" CTA on the homepage).
+
+**Fixes, approved one by one before any code changed, never assumed**:
+- Contract-list link → 3 Basescan token pages (AAPLc, TSLAc, NVDAc, the
+  same tickers already named in the slide's own text) — real, verified
+  live (`200`) before wiring in, more concrete than a generic list link
+  anyway.
+- `pitch-cover.tsx` "Docs" → `/docs`, the site's own public page —
+  confirmed live and already serving the day's synced
+  `TECHNICAL_SPEC.md` content before pointing at it, not assumed to
+  exist.
+- Plugin file link → `Eras256/skills` (the public fork backing
+  `base/skills#152`), the exact branch/file a Base maintainer would
+  actually review — more appropriate there than the original target ever
+  was.
+- "Contact via GitHub" → a real Telegram link
+  (`https://t.me/Vaiosx`), the actual contact channel, not an indirect
+  stand-in.
+- Every other "GitHub"/"License" link (cover, links slide, navbar,
+  footer, hero): **removed, no replacement**. No clean public equivalent
+  exists for "see the full source" while the repo stays private, and
+  pointing them at something indirect (an npm link captioned "GitHub")
+  would mislabel what it points to. Confirmed none of the three removal
+  sites left a real navigation or proof gap: the navbar already has
+  `/docs` as its own item, the footer still has Docs/Legal/Live API
+  after, and the hero's existing real-attestation proof panel already
+  served the "concrete evidence" role the removed button was reaching
+  for.
+- Deleted `web/src/components/layout/github-icon.tsx`: fully orphaned
+  once its only two callers (navbar, hero) stopped importing it —
+  confirmed via `grep` before deleting, not assumed unused.
+
+**Verified against the real deployed site, not just that it builds**:
+after each round, `npx tsc --noEmit` and a full `npm run build` (all 8
+pages), then curled every final target URL for a live `200` — 7 the
+first round, the site-wide set the second — and, after each push,
+watched the real Vercel deployment status check to `success` before
+grepping the actual served HTML (`www.vouch402.xyz/pitch` and the
+homepage) to confirm slide order, that every intended href landed
+correctly, and zero remaining occurrences of `Eras256/Vouchx402`
+anywhere in the rendered output.
+
+Two commits, both pushed: `1e584f5` (the 5 pitch-deck links) and
+`ac34ed8` (the 4 site-wide links + the orphaned icon file). Standing
+rule for future public-facing work added to `AGENTS.md` so this doesn't
+get rediscovered the hard way again.
