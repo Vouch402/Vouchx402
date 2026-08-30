@@ -131,6 +131,8 @@
       "txCount": "tx count",
       "uniqueContractInteractions": "unique contracts",
       "flagged": "flagged",
+      "tokenizedEquityExposure": "tokenized equity exposure",
+      "none": "none",
       "yes": "yes",
       "no": "no",
       "viewTx": "View transaction",

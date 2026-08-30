@@ -131,6 +131,8 @@
       "txCount": "cantidad de tx",
       "uniqueContractInteractions": "contratos únicos",
       "flagged": "marcada",
+      "tokenizedEquityExposure": "exposición a acciones tokenizadas",
+      "none": "ninguna",
       "yes": "sí",
       "no": "no",
       "viewTx": "Ver transacción",

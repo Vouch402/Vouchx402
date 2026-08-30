@@ -124,6 +124,7 @@ export interface RiskScoreResult {
     txCount: number;
     uniqueContractInteractions: number;
     flagged: boolean;
+    tokenizedEquityExposure: string[];
   };
   attestationUid: string;
 }
