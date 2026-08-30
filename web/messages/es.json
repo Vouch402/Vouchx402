@@ -251,6 +251,26 @@
         "mcpServer": "Servidor MCP independiente. Nunca guarda una wallet ni firma una transacción: devuelve una cotización sin firmar y deja que el agente que llama pague con su propia herramienta de wallet."
       }
     },
+    "tokenizedEquities": {
+      "eyebrow": "Emisión de activos",
+      "title": "Datos de riesgo para las acciones tokenizadas de Base",
+      "subtitle": "Construido directamente contra el foco en emisión de activos de Batches 004, días después de que Coinbase lanzara sus acciones tokenizadas de EE.UU. en Base.",
+      "shipped": {
+        "label": "Shippeado",
+        "title": "tokenizedEquityExposure, en producción real",
+        "body": "/v1/risk-score/:address ahora reporta si una dirección evaluada tiene o tuvo alguna vez interacción con alguno de los 13 tokens de acciones tokenizadas de EE.UU. de Coinbase en Base — AAPLc, TSLAc, NVDAc, y 10 más, direcciones de contrato verificadas de forma independiente on-chain, no copiadas de una cobertura de prensa que subreportó la lista en el lanzamiento. Solo los tickers: sin balance, sin cantidad de acciones, sin monto en dólares, misma disciplina que cualquier otra señal de Vouch402. En producción, verificado contra un holder real conocido antes de publicarlo."
+      },
+      "prototype": {
+        "label": "Prototipo",
+        "title": "Una capa de atestación para datos de emisión de activos",
+        "body": "Un schema nuevo de EAS, TokenizedEquityInteraction, registra quién interactuó con qué contrato de acción tokenizada y cuándo — una observación pública, resolvible de forma independiente, separada de cualquier pago. Registrado y ejecutado de verdad en Base Sepolia, no solo diseñado en papel. La dirección: cada señal que produce Vouch402 se convierte en un registro on-chain que un tercero puede verificar directamente, no solo una respuesta de API que hay que confiar a ciegas."
+      },
+      "links": {
+        "attestation": "Ver la atestación en vivo",
+        "contractList": "Ver la lista de contratos verificados"
+      },
+      "closing": "Solo lectura de punta a punta, por diseño: Vouch402 reporta hechos sobre direcciones con exposición a acciones tokenizadas. Nunca compra, vende, ni custodia los tokens subyacentes."
+    },
     "roadmap": {
       "eyebrow": "Hoja de ruta",
       "title": "Hacia dónde va esto",

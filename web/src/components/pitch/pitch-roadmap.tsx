@@ -7,7 +7,7 @@ export function PitchRoadmap() {
   const t = useTranslations("pitch.roadmap");
 
   return (
-    <PitchSlide id="roadmap" eyebrow={t("eyebrow")} index={6}>
+    <PitchSlide id="roadmap" eyebrow={t("eyebrow")} index={7}>
       <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">{t("title")}</h2>
       <p className="prose-column mt-6 text-muted-foreground">{t("body1")}</p>
 
