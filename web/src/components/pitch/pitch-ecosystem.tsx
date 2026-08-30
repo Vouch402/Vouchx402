@@ -5,8 +5,10 @@ import { ArrowUpRight } from "lucide-react";
 import { PitchSlide } from "./pitch-slide";
 import { Badge } from "@/components/ui/badge";
 
-const GITHUB_URL = "https://github.com/Eras256/Vouchx402";
-const PLUGIN_URL = `${GITHUB_URL}/blob/master/plugins/vouch402.md`;
+// Points at the fork branch backing PR #152, not the (private) Vouchx402
+// repo -- Eras256/skills is public, and this is literally the file a
+// base/skills maintainer would review. See DECISION_LOG.md.
+const PLUGIN_URL = "https://github.com/Eras256/skills/blob/add-vouch402-plugin/skills/base-mcp/plugins/vouch402.md";
 const PR_URL = "https://github.com/base/skills/pull/152";
 
 const CONTRIBUTIONS = [

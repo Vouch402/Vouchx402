@@ -176,7 +176,6 @@
       "eyebrow": "Resumen",
       "summary": "Una API de puntaje de riesgo medida por x402 para direcciones de Base, con una capa de attestations on-chain que registra si cada solicitud pagada realmente se cumplió.",
       "links": {
-        "github": "GitHub",
         "docs": "Docs",
         "sdk": "npm: vouch402-sdk"
       }
@@ -267,7 +266,7 @@
       },
       "links": {
         "attestation": "Ver la atestación en vivo",
-        "contractList": "Ver la lista de contratos verificados"
+        "contract": "{ticker} en Basescan"
       },
       "closing": "Solo lectura de punta a punta, por diseño: Vouch402 reporta hechos sobre direcciones con exposición a acciones tokenizadas. Nunca compra, vende, ni custodia los tokens subyacentes."
     },
@@ -280,12 +279,11 @@
     "links": {
       "eyebrow": "Enlaces",
       "title": "Enlaces",
-      "github": "Repositorio en GitHub",
       "docs": "Documentación técnica",
       "sdk": "vouch402-sdk en npm",
       "cli": "CLI vouch402 en npm",
       "mcpServer": "vouch402-mcp-server en npm",
-      "contact": "Contacto vía GitHub"
+      "contact": "Escribir por Telegram"
     }
   }
 }

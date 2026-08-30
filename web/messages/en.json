@@ -176,7 +176,6 @@
       "eyebrow": "Overview",
       "summary": "An x402-metered risk-score API for Base addresses, with an on-chain attestation layer recording whether every paid request was actually fulfilled.",
       "links": {
-        "github": "GitHub",
         "docs": "Docs",
         "sdk": "npm: vouch402-sdk"
       }
@@ -267,7 +266,7 @@
       },
       "links": {
         "attestation": "View the live attestation",
-        "contractList": "View the verified contract list"
+        "contract": "{ticker} on Basescan"
       },
       "closing": "Read-only throughout, by design: Vouch402 reports facts about tokenized-equity addresses. It never buys, sells, or custodies the underlying tokens."
     },
@@ -280,12 +279,11 @@
     "links": {
       "eyebrow": "Links",
       "title": "Links",
-      "github": "GitHub repository",
       "docs": "Technical documentation",
       "sdk": "vouch402-sdk on npm",
       "cli": "vouch402 CLI on npm",
       "mcpServer": "vouch402-mcp-server on npm",
-      "contact": "Contact via GitHub"
+      "contact": "Message on Telegram"
     }
   }
 }
