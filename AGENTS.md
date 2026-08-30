@@ -38,6 +38,18 @@ assuming what's live on npm.
 
 ## Conventions specific to this repo
 
+- **`github.com/Eras256/Vouchx402` is private** (deliberate, for another
+  grant process, unrelated to this project — not a mistake to "fix" by
+  making it public). Any public-facing surface (pitch deck, site copy,
+  README-style docs meant for outside readers) must never link to it
+  directly: it 404s for anyone not logged in as the owner. Use `/docs`
+  (the site's own public page), the npm packages, Basescan/EAS explorer
+  links, or another genuinely public destination instead — never an
+  indirect stand-in that mislabels what it points to (e.g. an npm link
+  captioned "GitHub"). Found live in production on 2026-08-30: 9 links
+  across the pitch deck and the site's shared navbar/footer/hero all
+  pointed at it. See `DECISION_LOG.md`, "Found `github.com/Eras256/Vouchx402`
+  is private" for the full audit and fixes.
 - **`DECISION_LOG.md` is mandatory for anything non-trivial.** Every real
   decision, bug fix, or finding gets a dated entry: what happened, why,
   and — critically — how it was *verified*, not just that it was built.
