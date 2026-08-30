@@ -3,6 +3,7 @@ import { PitchProblem } from "@/components/pitch/pitch-problem";
 import { PitchHowItWorks } from "@/components/pitch/pitch-how-it-works";
 import { PitchProof } from "@/components/pitch/pitch-proof";
 import { PitchEcosystem } from "@/components/pitch/pitch-ecosystem";
+import { PitchTokenizedEquities } from "@/components/pitch/pitch-tokenized-equities";
 import { PitchRoadmap } from "@/components/pitch/pitch-roadmap";
 import { PitchLinks } from "@/components/pitch/pitch-links";
 
@@ -37,6 +38,7 @@ export default function PitchPage() {
         <PitchHowItWorks />
         <PitchProof />
         <PitchEcosystem />
+        <PitchTokenizedEquities />
         <PitchRoadmap />
         <PitchLinks />
       </div>

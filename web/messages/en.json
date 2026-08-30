@@ -251,6 +251,26 @@
         "mcpServer": "Standalone MCP server. Never holds a wallet or signs a transaction: returns an unsigned quote and lets the calling agent pay with its own wallet tooling."
       }
     },
+    "tokenizedEquities": {
+      "eyebrow": "Asset issuance",
+      "title": "Risk data for Base's tokenized equities",
+      "subtitle": "Built directly against Batches 004's asset-issuance focus, days after Coinbase's tokenized US stocks launched on Base.",
+      "shipped": {
+        "label": "Shipped",
+        "title": "tokenizedEquityExposure, live in production",
+        "body": "/v1/risk-score/:address now reports whether a scored address holds or has ever transacted with any of Coinbase's 13 tokenized US-equity tokens on Base — AAPLc, TSLAc, NVDAc, and 10 more, contract addresses independently verified on-chain, not copied from a press release that under-reported the list at launch. Just the tickers: no balance, no share count, no dollar amount, same discipline as every other Vouch402 signal. Live in production, verified against a real known holder before shipping."
+      },
+      "prototype": {
+        "label": "Prototype",
+        "title": "An attestation layer for asset-issuance data",
+        "body": "A new EAS schema, TokenizedEquityInteraction, records who interacted with which tokenized-equity contract and when — a public, independently-resolvable observation, separate from any payment. Registered and exercised for real on Base Sepolia, not just designed on paper. The direction: every signal Vouch402 produces becomes an on-chain record a third party can check directly, not just an API response to take on trust."
+      },
+      "links": {
+        "attestation": "View the live attestation",
+        "contractList": "View the verified contract list"
+      },
+      "closing": "Read-only throughout, by design: Vouch402 reports facts about tokenized-equity addresses. It never buys, sells, or custodies the underlying tokens."
+    },
     "roadmap": {
       "eyebrow": "Roadmap",
       "title": "What this is building toward",

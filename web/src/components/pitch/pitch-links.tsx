@@ -19,7 +19,7 @@ export function PitchLinks() {
   ] as const;
 
   return (
-    <PitchSlide id="links" eyebrow={t("eyebrow")} index={7}>
+    <PitchSlide id="links" eyebrow={t("eyebrow")} index={8}>
       <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">{t("title")}</h2>
 
       <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-sm">

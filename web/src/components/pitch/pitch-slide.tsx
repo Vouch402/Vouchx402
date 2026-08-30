@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 // Slide count is fixed and small; tracked in one place rather than
 // computed, so an added/removed slide is a one-line change here plus
 // renumbering the affected index props, not a hidden invariant.
-export const TOTAL_SLIDES = 7;
+export const TOTAL_SLIDES = 8;
 
 export function PitchSlide({
   id,
