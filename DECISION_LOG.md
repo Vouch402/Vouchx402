@@ -3228,3 +3228,74 @@ from the transaction history already fetched for `walletAgeDays`/
    common transfer sink for many unrelated tokens, so real transfers to
    it are a true positive, not a false one. Caught before it was
    reported as a clean-negative result it wasn't.
+
+## 2026-08-29: TokenizedEquityInteraction — a second, working EAS attestation prototype for the Base Batches 004 application
+
+Task 2 of the same initiative as the entry above: a public,
+third-party-queryable attestation recording *when an address interacted
+with one of Coinbase's tokenized-equity tokens on Base*. Deliberately
+separate from the x402-SAP family (`X402ServiceFulfillment`/
+`X402ServiceDispute`, `src/attestation/schemas.ts`) — this isn't about
+whether Vouch402 fulfilled a paid request, it's a standalone
+observability primitive. New module: `src/attestation/tokenized-equity.ts`.
+
+**Schema**: `address subject,address tokenContract,string ticker,bytes32
+sourceTxHash,uint64 observedAt`. Non-revocable, same reasoning as
+`X402ServiceFulfillment`: an immutable record of a past observation.
+`sourceTxHash` is `ZERO_BYTES32` when the observation came from a
+balance check rather than one specific transfer — honest about what it
+actually represents rather than fabricating a transaction reference.
+
+**Checked against the Buró de Crédito rule and the new tokenized-equity
+read-only rule (both in `AGENTS.md`) before writing code, per explicit
+instruction**: no balance, no share count, no dollar amount anywhere in
+the schema. `tokenContract` naming a publicly-known, Coinbase-issued
+token isn't the "counterparty" rule 4 is about — that rule protects
+unrelated private third parties in a transaction, not the named,
+public financial instrument this whole feature exists to observe.
+Issuing this attestation buys, sells, or custodies nothing — it's a
+read-only record of an already-public on-chain fact.
+
+**Deliberately not wired into the paid `/v1/risk-score` request path**:
+auto-attesting on every request that happens to find exposure would
+mean this resource server spending its own gas on an unprompted
+on-chain write per request — a real economic and architecture decision
+for later, not something to bake in silently while building a grant
+application prototype.
+
+**Registered and exercised for real on Base Sepolia, not just written**:
+`npm run demo:tokenized-equity-attestation` (new script,
+`scripts/demo-tokenized-equity-attestation.ts`) registers the schema
+(idempotent) and attests that the real, independently-verified NVDAc
+holder from the entry above (`0xb5ef91ce939F2C390cff462bb231E74bb228deB4`)
+holds it — the underlying *fact* is real Base mainnet data even though
+the attestation infrastructure itself runs on Sepolia, exactly what
+"prototype, not production-complete" is meant to allow.
+
+Schema UID (Base Sepolia): `0x484062ca87d62b303df9ff146d7771aa2968e96f0efb401ccfd70730f26c3d1d`.
+First real attestation UID: `0x88c6ec5aa0fe069ebce61d2a9d69a49e03bee156ad5586998f6949777cfe751c`
+— resolvable by anyone at
+https://base-sepolia.easscan.org/attestation/view/0x88c6ec5aa0fe069ebce61d2a9d69a49e03bee156ad5586998f6949777cfe751c.
+
+**Hit, and correctly diagnosed, the exact class of public-RPC
+propagation lag already documented elsewhere in this file** (`src/lib/eas.ts`'s
+`withNonceRetry`/`getAttestationWithRetry` comments): the very first
+`attest()` call, immediately after the schema-registration tx confirmed,
+reverted with `InvalidSchema()` (decoded the raw `0xbf37b20e` selector
+against the real EAS error set to confirm, not guessed from memory) —
+the registration had landed, but the schema-registry lookup inside
+`attest()`'s gas estimation hit a different backend node behind the
+load-balanced `sepolia.base.org` endpoint that hadn't caught up yet.
+Re-running the attest call alone, schema already persisted in `.env`,
+succeeded immediately. Not treated as fixed by inference: independently
+re-resolved the resulting attestation via `getAttestationWithRetry` +
+`SchemaEncoder.decodeData` in a separate script and confirmed every
+field decodes correctly (`subject`, `tokenContract`, `ticker: "NVDAc"`,
+`sourceTxHash: 0x0`, `observedAt`), attester matches the project's own
+deployer wallet, recipient matches the real holder address.
+
+Added the two new env var placeholders to `.env.example`
+(`EAS_SCHEMA_UID_TOKENIZED_EQUITY_SEPOLIA`/`_MAINNET`), left blank there
+per this project's existing convention — the real values live in the
+gitignored `.env` and are recorded here instead, same as the x402-SAP
+schema UIDs above.

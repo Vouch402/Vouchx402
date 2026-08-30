@@ -12,7 +12,8 @@
     "dev": "tsx src/server/index.ts",
     "test": "vitest run",
     "demo": "tsx scripts/demo.ts",
-    "register:schemas": "tsx src/attestation/schemas.ts"
+    "register:schemas": "tsx src/attestation/schemas.ts",
+    "demo:tokenized-equity-attestation": "tsx scripts/demo-tokenized-equity-attestation.ts"
   },
   "keywords": [],
   "author": "",
