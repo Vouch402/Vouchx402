@@ -193,6 +193,10 @@ function DemoStatus({
         <Row label={t("result.txCount")} value={String(result.signals.txCount)} />
         <Row label={t("result.uniqueContractInteractions")} value={String(result.signals.uniqueContractInteractions)} />
         <Row label={t("result.flagged")} value={result.signals.flagged ? t("result.yes") : t("result.no")} />
+        <Row
+          label={t("result.tokenizedEquityExposure")}
+          value={result.signals.tokenizedEquityExposure.length > 0 ? result.signals.tokenizedEquityExposure.join(", ") : t("result.none")}
+        />
         <Row label="attestationUid" value={truncateHex(result.attestationUid)} />
       </dl>
 

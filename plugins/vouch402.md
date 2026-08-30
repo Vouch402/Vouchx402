@@ -82,7 +82,11 @@ x402-gated. First call, no `X-PAYMENT` header:
   Warnings`). Since this flow is driven by an autonomous agent rather
   than a human clicking a checkbox, whatever orchestrates this plugin
   must set this field explicitly, never assume or hardcode it. Returns:
-  - `200`: `{ "address": "0x...", "score": 0-100, "signals": { "walletAgeDays": number, "txCount": number, "uniqueContractInteractions": number, "flagged": boolean }, "attestationUid": "0x<bytes32>" }`
+  - `200`: `{ "address": "0x...", "score": 0-100, "signals": { "walletAgeDays": number, "txCount": number, "uniqueContractInteractions": number, "flagged": boolean, "tokenizedEquityExposure": string[] }, "attestationUid": "0x<bytes32>" }`.
+    `tokenizedEquityExposure` lists tickers (e.g. `["NVDAc"]`, `[]` if
+    none) among Coinbase's Base-mainnet tokenized-equity tokens this
+    address holds or has ever transacted with — no balance or dollar
+    amount, and always `[]` on Base Sepolia.
   - `402` again: quote expired/already consumed, tx not yet confirmed, or the payment doesn't match what was quoted (wrong amount/recipient/sender): server-verified, never trusts the retry's claims alone.
   - `403`: either the request's IP resolves to a Tier 1 restricted jurisdiction (technical geo-block, no exception), or `jurisdictionAttestation` was missing/`false` on the payload above (contractual gate, checked before payment verification).
   - `400`: malformed address, or `resourceId` doesn't match the `:address` in the URL.

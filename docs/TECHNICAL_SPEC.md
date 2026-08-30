@@ -65,7 +65,8 @@ A retried request with valid payment proof returns:
     "walletAgeDays": 0,
     "txCount": 0,
     "uniqueContractInteractions": 0,
-    "flagged": false
+    "flagged": false,
+    "tokenizedEquityExposure": []
   },
   "attestationUid": "0x..."
 }
@@ -78,6 +79,16 @@ presented as a complete risk model. `attestationUid` points to the
 `X402ServiceFulfillment` record created for this specific response (see
 below), letting any party independently verify what was returned via its
 `responseHash`.
+
+`tokenizedEquityExposure` is a list of tickers (e.g. `["NVDAc", "TSLAc"]`,
+`[]` if none) among Coinbase's Base-mainnet tokenized-equity tokens (see
+`src/scoring/tokenized-equities.json` for the full, independently-verified
+contract list) this address currently holds a nonzero balance of, or has
+ever sent/received a transaction with. Base mainnet only — always `[]` on
+Base Sepolia, since these tokens don't exist there. No balance, share
+count, or dollar amount is ever included, only the ticker and the bare
+fact of exposure, and it never affects `score`: it's a named fact, not a
+risk input, same discipline as every other signal here.
 
 ### Public results (`makePublic`)
 
