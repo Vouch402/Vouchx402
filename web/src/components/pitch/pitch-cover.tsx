@@ -4,14 +4,15 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { PitchSlide } from "./pitch-slide";
 
-const GITHUB_URL = "https://github.com/Eras256/Vouchx402";
-
 export function PitchCover() {
   const t = useTranslations("pitch");
 
+  // No GitHub link here: the repo is private (a deliberate, unrelated
+  // decision for another grant process), so a "GitHub" link would 404
+  // for any real visitor. Not replaced with something indirect that
+  // would mislabel what it points to -- see DECISION_LOG.md.
   const links = [
-    { label: t("cover.links.github"), href: GITHUB_URL },
-    { label: t("cover.links.docs"), href: `${GITHUB_URL}/blob/master/docs/TECHNICAL_SPEC.md` },
+    { label: t("cover.links.docs"), href: "/docs" },
     { label: t("cover.links.sdk"), href: "https://www.npmjs.com/package/vouch402-sdk" },
   ];
 

@@ -5,17 +5,16 @@ import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { PitchSlide } from "./pitch-slide";
 
-const GITHUB_URL = "https://github.com/Eras256/Vouchx402";
-
 export function PitchLinks() {
   const t = useTranslations("pitch.links");
 
+  // No GitHub link here: the repo is private (a deliberate, unrelated
+  // decision for another grant process). See DECISION_LOG.md.
   const externalLinks = [
-    { key: "github", href: GITHUB_URL },
     { key: "sdk", href: "https://www.npmjs.com/package/vouch402-sdk" },
     { key: "cli", href: "https://www.npmjs.com/package/vouch402" },
     { key: "mcpServer", href: "https://www.npmjs.com/package/vouch402-mcp-server" },
-    { key: "contact", href: GITHUB_URL },
+    { key: "contact", href: "https://t.me/Vaiosx" },
   ] as const;
 
   return (
