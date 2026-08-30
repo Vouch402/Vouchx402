@@ -3,7 +3,6 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 
-const GITHUB_URL = "https://github.com/Eras256/Vouchx402";
 const API_URL = "https://vouch402.fly.dev";
 
 export function Footer() {
@@ -16,28 +15,12 @@ export function Footer() {
         <p className="max-w-md text-sm text-muted-foreground">{t("tagline")}</p>
 
         <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {t("github")}
-          </a>
           <Link href="/docs" className="text-muted-foreground transition-colors hover:text-foreground">
             {t("docs")}
           </Link>
           <Link href="/legal" className="text-muted-foreground transition-colors hover:text-foreground">
             {t("legal")}
           </Link>
-          <a
-            href={`${GITHUB_URL}/blob/master/LICENSE`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {t("license")}
-          </a>
           <a
             href={API_URL}
             target="_blank"

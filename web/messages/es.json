@@ -5,7 +5,6 @@
     "liveActivity": "Actividad en vivo",
     "tryIt": "Pruébalo",
     "docs": "Documentación",
-    "github": "GitHub",
     "menu": "Menú"
   },
   "selectors": {
@@ -26,18 +25,15 @@
   },
   "footer": {
     "tagline": "Inteligencia de riesgo on-chain para agentes autónomos en Base, medida con x402.",
-    "github": "GitHub",
     "docs": "Documentación",
     "legal": "Legal",
-    "license": "Licencia",
     "api": "API en vivo",
     "copyright": "© {year} Vouch402"
   },
   "hero": {
     "eyebrow": "En vivo en Base mainnet",
     "tagline": "Inteligencia de riesgo on-chain medida con x402 para agentes autónomos en Base, con una capa integrada de attestations de cumplimiento verificable.",
-    "primaryCta": "Ver actividad en vivo",
-    "secondaryCta": "GitHub"
+    "primaryCta": "Ver actividad en vivo"
   },
   "howItWorks": {
     "title": "Cómo funciona",

@@ -4,14 +4,11 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./logo";
-import { GithubIcon } from "./github-icon";
 import { NAV_LINKS } from "./nav-links";
 import { LanguageSelector } from "./language-selector";
 import { NetworkSelector } from "./network-selector";
 import { ThemeSelector } from "./theme-selector";
 import { MobileMenu } from "./mobile-menu";
-
-const GITHUB_URL = "https://github.com/Eras256/Vouchx402";
 
 export function Navbar() {
   const t = useTranslations("nav");
@@ -35,17 +32,6 @@ export function Navbar() {
               render={<Link href={link.href}>{t(link.labelKey)}</Link>}
             />
           ))}
-          <Button
-            variant="ghost"
-            size="sm"
-            nativeButton={false}
-            render={
-              <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="gap-1.5">
-                <GithubIcon className="size-4" aria-hidden="true" />
-                {t("github")}
-              </a>
-            }
-          />
         </nav>
 
         <div className="hidden items-center gap-0.5 lg:flex">
