@@ -5,7 +5,6 @@
     "liveActivity": "Live activity",
     "tryIt": "Try it",
     "docs": "Docs",
-    "github": "GitHub",
     "menu": "Menu"
   },
   "selectors": {
@@ -26,18 +25,15 @@
   },
   "footer": {
     "tagline": "x402-metered on-chain risk intelligence for autonomous agents on Base.",
-    "github": "GitHub",
     "docs": "Docs",
     "legal": "Legal",
-    "license": "License",
     "api": "Live API",
     "copyright": "© {year} Vouch402"
   },
   "hero": {
     "eyebrow": "Live on Base mainnet",
     "tagline": "x402-metered on-chain risk intelligence for autonomous agents on Base, with a built-in proof-of-fulfillment attestation layer.",
-    "primaryCta": "View live activity",
-    "secondaryCta": "GitHub"
+    "primaryCta": "View live activity"
   },
   "howItWorks": {
     "title": "How it works",

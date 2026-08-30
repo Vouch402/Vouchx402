@@ -5,11 +5,8 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { GithubIcon } from "@/components/layout/github-icon";
 import { easExplorerUrl } from "@/lib/vouch402";
 import { truncateHex } from "@/lib/format";
-
-const GITHUB_URL = "https://github.com/Eras256/Vouchx402";
 
 // A real, independently-verified mainnet fulfillment attestation (see
 // DECISION_LOG.md "First real mainnet activity on the live deployment"),
@@ -44,17 +41,6 @@ export function Hero() {
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button size="lg" nativeButton={false} render={<Link href="/#live-activity">{t("primaryCta")}</Link>} />
-            <Button
-              size="lg"
-              variant="outline"
-              nativeButton={false}
-              render={
-                <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="gap-1.5">
-                  <GithubIcon className="size-4" aria-hidden="true" />
-                  {t("secondaryCta")}
-                </a>
-              }
-            />
           </div>
         </div>
 
