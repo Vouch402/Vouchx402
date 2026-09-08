@@ -3474,3 +3474,118 @@ past ~2 minutes, the still-untouched follow-up from the earlier
 correction remains valid: check GitHub → `Vouch402` org → Settings →
 Installations for the Vercel App's listing, since that's the one check
 never actually completed in this whole thread.
+
+## 2026-09-08: Found — Coinbase's own Mexico eligibility for its tokenized-equity product is unconfirmed, with a real freeze/blacklist risk; pivoted example attestations to testnet as a result
+
+While preparing 3 real example attestations for the `tokenizedEquityExposure`
+feature (Base Batches 004 application, see the 2026-08-29 entries above),
+the user separately investigated whether Mexico qualifies as an eligible
+jurisdiction for **Coinbase's own** tokenized US-equity product — the
+underlying asset this feature reads and reports on, not something
+Vouch402 issues, sells, or custodies. Two findings, reported directly by
+the user and not independently re-verified in this session (stated
+plainly, not smoothed into a claim this project confirmed itself):
+
+1. Whether Mexico is an eligible jurisdiction for that specific Coinbase
+   product could not be confirmed in either direction.
+2. Coinbase can freeze or blacklist wallets it associates with a
+   jurisdiction where the product isn't permitted — a real, live risk,
+   separate from whether Vouch402's own activity constitutes
+   facilitation (it doesn't; unaffected, see the existing read-only
+   rule in `AGENTS.md`).
+
+**Immediate consequence, same day**: paused the plan to generate the
+example attestations via a real mainnet USDC payment against
+production and pivoted entirely to Base Sepolia instead. Attempting the
+mainnet payment via `cast send` was in any case blocked by the Claude
+Code auto-mode classifier (a real-funds transfer); the user declined to
+open a standing permission for it, correctly treating it as a one-off
+rather than something worth weakening the safeguard for, and chose the
+testnet pivot instead of running it manually.
+
+Before attesting anything, re-confirmed the known holder
+(`0xb5ef91ce939F2C390cff462bb231E74bb228deB4`, the same address from
+the 2026-08-29 `tokenizedEquityExposure` entry) still has real exposure,
+via a direct `balanceOf` call against Base mainnet — no paid request,
+no API involved, $0 either way: AAPLc (762.46), AMZNc (271.9), GOOGLc
+(385.25), SPCXc (189.65), and TSLAc (126.45) all nonzero; NVDAc's
+current balance had dropped to 0 (its historical interaction is a
+separate, still-real fact the interaction-based half of the signal
+would capture, not tested here).
+
+Also confirmed directly in code, before assuming testnet would even
+show anything: [`src/scoring/score.ts:93`](src/scoring/score.ts#L93)
+and [`:122`](src/scoring/score.ts#L122) both `return []` unconditionally
+whenever `network !== "base"` — `tokenizedEquityExposure` cannot be
+non-empty on Base Sepolia for any address, by design (matches the
+2026-08-29 entry's own empirical finding). So the originally-planned
+"real paid request against Sepolia" step was dropped as pointless —
+it would only ever return `[]` — and replaced with 3 separate
+`TokenizedEquityInteraction` attestations instead, one per real ticker
+this address holds:
+
+| Ticker | Attestation UID (Base Sepolia) |
+|---|---|
+| AAPLc | `0x093833cf14c60de2368c6297865338c52326de60cce9743cdf5091fa262f5449` |
+| GOOGLc | `0x08dfcaf1d6f702cbb967df877ef2d43f2eb6af1646dbed6e8a24ccfc0d83ae73` |
+| TSLAc | `0xc212f02e39763b20ce1459dc191457ed3296b5b28ba98b834f9c1d8ba5542ffa` |
+
+Run via a temporary, uncommitted script reusing the exact same
+`registerTokenizedEquitySchema`/`attestTokenizedEquityInteraction`
+functions the checked-in `scripts/demo-tokenized-equity-attestation.ts`
+already uses (deleted immediately after running; `git status` confirmed
+clean). Each attestation independently re-resolved via EAS's own
+GraphQL API afterward, not just trusted from the script's own stdout:
+correct `subject`, `tokenContract` (matching
+`src/scoring/tokenized-equities.json` exactly), `ticker`, attester
+matching the project's deployer wallet, `revoked: false`. Total cost:
+**$0** — only Base Sepolia test ETH for gas, no mainnet funds touched.
+
+**Language audit of every public surface mentioning tokenized equities**
+(pitch deck en/es, README, `docs/TECHNICAL_SPEC.md`'s synced copy,
+`/legal` en/es, `plugins/vouch402.md`, the three client-package
+READMEs): nothing found needing correction. Every occurrence already
+uses strictly observational language ("reports facts... never buys,
+sells, or custodies") — none claims or implies Coinbase-product
+jurisdiction eligibility, and none frames Vouch402 as facilitating
+access to these tokens. Not manufacturing a finding to have something
+to show, per this project's own ecosystem-bug-hunting standard applied
+here to copy instead of code.
+
+**Real gap found while auditing, fixed**: `/legal` section 4 (open
+legal questions) covered LFPIORPI/Acuerdo 115/2026 in detail but never
+mentioned the Ley del Mercado de Valores / CNBV angle `AGENTS.md`
+already names as the specific reason this feature stays read-only-only,
+and this new Coinbase-eligibility/blacklist finding wasn't recorded
+anywhere durable outside this conversation. Added as open question 9 in
+both `legal-en.md` and `legal-es.md`, same hedged, attorney-review
+pattern as the other 8.
+
+**Second real gap found, separate sweep for anywhere else this signal
+should surface**: the published `vouch402-sdk` package's `RiskSignals`
+TypeScript interface (`sdk/src/types.ts`) never declared
+`tokenizedEquityExposure` at all, since the feature shipped on
+2026-08-29 — a type-completeness bug, not a data-loss one. Confirmed
+the actual data was never lost: `sdk/src/client.ts`'s `fetchScore()`
+just casts the raw JSON response (`await res.json() as RiskScoreResult`),
+it never reconstructs the object field-by-field, so the real API's
+`tokenizedEquityExposure` was reaching every SDK consumer at runtime
+all along — just inaccessible to anyone writing TypeScript against the
+published types without a workaround. Fixed the field in
+`sdk/src/types.ts` (rebuilds clean, `npm run build` inside `sdk/`).
+**Not published** — no npm credentials in this environment; this is a
+source-level fix only until the user runs the actual `npm publish`.
+
+Also updated `mcp-server/src/index.ts`'s `fetch_risk_score` tool: its
+human-readable text summary mentioned score/attestation/verified but
+never this signal, even though the full data was already present in
+its `structuredContent` response. Added it to the text summary too.
+Since `mcp-server` depends on the **published** `vouch402-sdk@^0.3.0`
+from npm (confirmed via `mcp-server/node_modules/vouch402-sdk`, a real
+installed copy, not a workspace symlink to this repo's own `sdk/`), its
+own `tsc --noEmit` still fails against the unpublished type fix above —
+confirmed by actually running it, not assumed. Added a narrow, commented
+type-widening cast as a stopgap (`result.signals as typeof
+result.signals & { tokenizedEquityExposure: string[] }`), removable
+once `vouch402-sdk` is republished with the type already fixed;
+`tsc --noEmit` passes clean with the cast in place, verified.

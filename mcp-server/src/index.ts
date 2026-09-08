@@ -95,8 +95,15 @@ server.registerTool(
       // line without it throwing is itself the independent proof.
       const attestation = await verifyAttestation(result.attestationUid, quote.network as Network);
       const verified = !attestation.revoked;
+      // The installed vouch402-sdk@0.3.0's published RiskSignals type
+      // doesn't declare this field yet (fixed in sdk/src/types.ts, not
+      // published yet) even though the API and the runtime object both
+      // already carry it. Cast until the next SDK publish includes it.
+      const exposure = (result.signals as typeof result.signals & { tokenizedEquityExposure: string[] })
+        .tokenizedEquityExposure;
+      const exposureNote = exposure.length > 0 ? ` Tokenized-equity exposure: ${exposure.join(", ")}.` : "";
       return textResult(
-        `Score ${result.score} for ${result.address}. Attestation ${result.attestationUid} independently verified on EAS: ${verified ? "yes" : "no"}. Explorer: ${easExplorerUrl(quote.network as Network, result.attestationUid)}`,
+        `Score ${result.score} for ${result.address}.${exposureNote} Attestation ${result.attestationUid} independently verified on EAS: ${verified ? "yes" : "no"}. Explorer: ${easExplorerUrl(quote.network as Network, result.attestationUid)}`,
         { ...result, verified, explorerUrl: easExplorerUrl(quote.network as Network, result.attestationUid) }
       );
     } catch (err) {

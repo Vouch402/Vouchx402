@@ -211,6 +211,8 @@ These questions are documented explicitly, left unresolved rather than decided u
 
 8. **Off-chain data retention policy:** the current code defines no retention period or deletion mechanism for data stored in the server's own database (beyond what already remains permanently on the blockchain). This is a pending product decision.
 
+9. **A separate question, raised 2026-09-08, about the underlying asset rather than about Vouch402's own activity: is Mexico an eligible jurisdiction for Coinbase's own tokenized US-equity product** (the asset `tokenizedEquityExposure` observes and reports on — see `docs/TECHNICAL_SPEC.md` — not something Vouch402 issues, sells, or custodies)? This could not be confirmed in either direction. What is confirmed: Coinbase can freeze or blacklist wallets it associates with a jurisdiction where this specific product is not permitted, independent of what Vouch402 itself does with the resulting on-chain data. This is not the Ley del Mercado de Valores / CNBV question already scoped elsewhere in this project (whether Vouch402's own read-only reporting on these tokens counts as securities-market activity) — it is about the issuer's own product terms, relevant to anyone in Mexico whose wallet happens to hold or interact with these specific tokens, regardless of Vouch402's own compliance posture. See `DECISION_LOG.md` for the finding and the resulting decision to keep example attestations for this feature on testnet rather than moving further mainnet funds or wallet activity through it while this is unresolved.
+
 ---
 
 ## 5. Restricted Jurisdictions
