@@ -162,6 +162,14 @@
       "flagged": "marcada"
     }
   },
+  "tokenizedEquityDemo": {
+    "badge": "Testnet — no es actividad de producción",
+    "title": "Demo — Base Sepolia (testnet)",
+    "subtitle": "Tres atestaciones de ejemplo TokenizedEquityInteraction para tokenizedEquityExposure, corridas en Base Sepolia solo para esta demostración. Separado de Actividad reciente arriba, que muestra exclusivamente requests reales de Base mainnet — la actividad en testnet es ruido de desarrollo, no una señal de uso real.",
+    "viewOnExplorer": "Ver en el explorador de EAS",
+    "subject": "La dirección tiene los tres tickers reales en Base mainnet:",
+    "viewSubject": "Ver en Basescan"
+  },
   "pitch": {
     "metaTitle": "Vouch402: prueba de cumplimiento para pagos x402",
     "eyebrow": "En vivo en Base mainnet",
