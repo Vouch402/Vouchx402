@@ -43,6 +43,45 @@ resolved via EAS, the Builder Code suffix compared byte-for-byte against
 the real transaction's calldata) is in `DECISION_LOG.md` under "Phase 3
 gate: met".
 
+## Tokenized-equity risk signal
+
+Built directly against Base Batches 004's asset-issuance focus, days
+after Coinbase's tokenized US stocks launched on Base.
+
+- **`tokenizedEquityExposure`, live in production**:
+  `/v1/risk-score/:address` reports whether a scored address holds or
+  has ever transacted with any of Coinbase's 13 tokenized US-equity
+  tokens on Base — AAPLc, TSLAc, NVDAc, and 10 more, contract addresses
+  independently verified on-chain via a direct `symbol()` call to each,
+  not copied from press coverage that under-reported the list at launch
+  (see `DECISION_LOG.md`, "New signal, `tokenizedEquityExposure`"). Just
+  the tickers: no balance, no share count, no dollar amount — the same
+  discipline as every other Vouch402 signal. Deliberately excluded from
+  the risk score itself: holding real-world-asset exposure is a fact,
+  not a verdict. Full list:
+  [`src/scoring/tokenized-equities.json`](src/scoring/tokenized-equities.json).
+
+  | Ticker | Contract |
+  |---|---|
+  | AAPLc | [`0xb200000000000000000000C2e324d24d7eEcd1fb`](https://basescan.org/token/0xb200000000000000000000C2e324d24d7eEcd1fb) |
+  | TSLAc | [`0xb2000000000000000000001e800a7f5189430cD0`](https://basescan.org/token/0xb2000000000000000000001e800a7f5189430cD0) |
+  | NVDAc | [`0xb20000000000000000000078ee7ce2fE4908108C`](https://basescan.org/token/0xb20000000000000000000078ee7ce2fE4908108C) |
+
+- **`TokenizedEquityInteraction`, an EAS attestation prototype**: a
+  schema separate from the x402-SAP family
+  ([`src/attestation/tokenized-equity.ts`](src/attestation/tokenized-equity.ts))
+  records who interacted with which tokenized-equity contract and when —
+  a public, independently-resolvable observation, separate from any
+  payment. Registered and exercised for real on Base Sepolia: [view the
+  live
+  attestation](https://base-sepolia.easscan.org/attestation/view/0x88c6ec5aa0fe069ebce61d2a9d69a49e03bee156ad5586998f6949777cfe751c).
+  See `DECISION_LOG.md`, "TokenizedEquityInteraction" for the schema
+  registration and independent decode verification.
+
+Read-only throughout, by design: Vouch402 reports facts about
+tokenized-equity addresses. It never buys, sells, or custodies the
+underlying tokens.
+
 ## Ecosystem contributions
 
 While auditing `eas-sdk` — the library this project calls directly for
