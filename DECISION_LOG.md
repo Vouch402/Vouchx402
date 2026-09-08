@@ -3589,3 +3589,86 @@ type-widening cast as a stopgap (`result.signals as typeof
 result.signals & { tokenizedEquityExposure: string[] }`), removable
 once `vouch402-sdk` is republished with the type already fixed;
 `tsc --noEmit` passes clean with the cast in place, verified.
+
+## 2026-09-08: Found — a QuickNode RPC rate limit can make `attestFulfillment`'s own safety-net fail too, silently losing a real payment with zero on-chain record
+
+Surfaced by 3 real mainnet payments run against production (the dev
+wallet scoring itself, `PRICE_USDC` = 0.01 each, meant to add ordinary
+"Evaluada" rows to the real activity feed, unrelated to the tokenized-
+equity work above). Two of the three real `transfer()` calls confirmed
+on-chain; the third was never sent (a keystore password typo, caught
+before any funds moved). The two real payments then hit a production
+bug, root-caused from `fly logs --app vouch402 --no-tail`, not guessed:
+
+```
+Fulfillment failed after payment was verified: Error: could not coalesce error
+(error={ "code": -32007, "message": "15/second request limit reached -
+reduce calls per second or upgrade your account at
+https://dashboard.quicknode.com/billing/plan" }, ...)
+```
+
+`src/server/app.ts:161-223` is explicitly designed so that, once a
+payment is verified and the quote consumed, *every* remaining failure
+path still records an honest on-chain attestation (`FulfillmentStatus.Error`
+if the normal path throws) — the payer can't be un-charged, so the
+design intent is that they at least get something to point a dispute
+at. **This incident shows that safety net has a hole**: the fallback
+error-attestation call goes through the exact same rate-limited RPC
+provider (`getEas()` → ethers.js `JsonRpcProvider`, QuickNode) as the
+primary attempt, so a rate-limit window can take out both attempts
+back to back, leaving genuinely nothing — no success record, no error
+record, money gone.
+
+**What actually happened to each of the two real payments, verified
+independently, not assumed from the 500 response alone**:
+
+- **Payment 1** (`txHash` `0x9b4f7252f21497d275cd4190a00ec4db333e55213835d48cd50bd45889a3df64`,
+  `resourceId` `0xb19df3144cf15a840409ffac782a99dfd8cf999a8cdbc362449b1d118192095d`):
+  the *primary* attestation attempt actually succeeded on-chain — the
+  server's own `tx.wait()` call polling for confirmation is what hit
+  the rate limit, not the attestation write itself. Independently
+  confirmed: `cast receipt` on the attest transaction
+  (`0x44e76af3eac7263e4bb8b7850ec6b0ba7fe3f05a6616e33e8091ede3bcc2e4c3`)
+  shows `status: 0x1` against the EAS contract
+  (`0x4200000000000000000000000000000000000021`); decoding its
+  `Attested` event log gives UID
+  `0x94270af6231d546e997f2d2ca60e70b733ef9f5d070be816976e430c330cee05`;
+  resolving that UID directly via `base.easscan.org`'s GraphQL API
+  confirms `status: 0` (Fulfilled), `x402PaymentRef` and `resourceId`
+  matching this exact payment, `revoked: false`. **A completely real,
+  valid fulfillment attestation exists for this payment** — the server
+  just never learned it succeeded, so `recordAttestation`/
+  `recordRequestServed`/`recordPublicResult` never ran, and it will
+  never show up in `/v1/activity` or the site on its own. Recoverable
+  with a DB backfill; not attempted here, left for a deliberate fix
+  rather than a live production write made unilaterally.
+- **Payment 2** (`txHash` `0xedd0231accec677fb0a8a1ab58a37270c31edb3dccf48f3046674e4d4b8c37b7`,
+  `resourceId` `0x6787bf2b925caa17b6660fee420eaceca9aa7d871ae94d73512251f243e02e52`):
+  genuinely lost. The primary attempt failed immediately on `eth_chainId`
+  (rate-limited before it could even build the attest transaction), and
+  the fallback error-attestation attempt got far enough to build and
+  sign an `eth_sendRawTransaction` call (decoded from the log line
+  itself: calldata confirms this payment's exact `txHash`/`resourceId`/
+  payer/payee) but that broadcast call was *also* rate-limited, so it
+  never reached the network. No success attestation, no error
+  attestation, `resourceId` already marked consumed (so it can't be
+  retried), 0.01 real USDC already transferred to `payTo`. This is a
+  genuine, unrecovered instance of exactly the failure mode the
+  Error-status fallback exists to prevent.
+
+**Not fixed yet, deliberately** — the user chose to document this fully
+now and treat the actual fix (retry/backoff around `eas.attest()`/
+`tx.wait()`, and/or reviewing the QuickNode plan's rate limit against
+real traffic) as a separate, considered piece of work rather than a
+same-session patch. A third payment attempt was deliberately **not**
+made today to avoid risking another silent loss while the RPC is still
+rate-limited. Open, unresolved as of this entry:
+- Backfill payment 1's real attestation into the production DB (or
+  decide it's not worth the operational risk of a manual write).
+- Decide the actual fix: retry/backoff on the RPC calls inside
+  `attestFulfillment`/payment verification, a less RPC-call-heavy
+  confirmation strategy, upgrading QuickNode's plan, or some
+  combination.
+- No refund/remediation decided yet for payment 2's real, unrecoverable
+  0.01 USDC — small in dollar terms, but a real instance of the failure
+  mode a real customer could hit.
