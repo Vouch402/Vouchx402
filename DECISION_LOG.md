@@ -3423,20 +3423,37 @@ resolved until one of those two checks confirms it directly, and do not
 test it with a real push until that's done, per this project's own
 standing "committed is not live" rule applied to infra, not just code.
 
-**Resolved, same day**: the user opened Project Settings → Git in the
-Vercel dashboard themselves (screenshot). It showed "Connected Git
-Repository: `Vouch402/Vouchx402`" (correct new org) plus a "Git
-repository reconnected." toast — Vercel's own explicit re-establish
-action for exactly this kind of ownership change.
+**Looked resolved, then wasn't — corrected same day.** The user opened
+Project Settings → Git in the Vercel dashboard (screenshot): "Connected
+Git Repository: `Vouch402/Vouchx402`" plus a "Git repository
+reconnected." toast. Reported as resolved on the strength of that alone
+— premature, exactly the "committed is not live" mistake this file
+exists to catch, just applied to infra instead of code this time.
 
-One loose end, disclosed rather than smoothed over: re-querying the
-same `GET /v9/projects/{id}` endpoint afterward still returns the
-identical stale `link.org: "Eras256"` with an unchanged `updatedAt`
-timestamp — the dashboard's live-resolved display and this particular
-API field disagree. Read as that field being legacy/cosmetic (the
-dashboard clearly resolves current ownership correctly via `repoId` +
-`gitCredentialId`, both unchanged and matching the real repo throughout),
-not as evidence the reconnect didn't take — but this wasn't independently
-proven by a real push, only by the dashboard's own explicit confirmation.
-If a future push's auto-deploy doesn't fire, this is the first place to
-recheck.
+**Real test, run right after**: pushed 4 real commits
+(`94825d8`..`6afc6a9`, this same migration's own docs work) to
+`origin/master` — succeeded, GitHub's response even confirmed the
+redirect (`This repository moved. Please use the new location:
+https://github.com/Vouch402/Vouchx402.git`). Polled
+`GET /v6/deployments` on the `vouch402` project every 8s for 90+
+seconds afterward: the most recent deployment stayed pinned to commit
+`ac34ed8` (2026-08-30, 8 days stale) the entire time. **No deployment
+was created for any of the 4 new commits.** The dashboard's "reconnected"
+confirmation did not translate into a working auto-deploy trigger, at
+least not within 90 seconds — long past normal GitHub-webhook-to-Vercel-
+build latency (normally single-digit seconds, confirmed by this same
+project's own deployment history: `df8472e` → build within ~20 minutes
+of push in the 2026-08-29/30 log entries above, and typically much
+faster).
+
+**Genuinely unresolved as of this writing.** The `link.org: "Eras256"`
+staleness noted above may or may not be connected to this — not
+determined either way. Next step needs the second dashboard check that
+was asked for originally and never actually completed: GitHub →
+`Vouch402` org → Settings → Installations, confirming the Vercel
+GitHub App is listed there with access to `Vouchx402` (not just that
+Vercel's own UI says "connected" — Vercel's side of a broken connection
+can show stale-optimistic state). Do not push real feature work
+assuming auto-deploy works until this is confirmed; use `fly deploy`/
+manual `vercel --prod` or a manual redeploy trigger in the interim if a
+frontend change needs to go live before this is fixed.
