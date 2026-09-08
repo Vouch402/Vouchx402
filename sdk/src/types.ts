@@ -28,6 +28,11 @@ export interface RiskSignals {
   txCount: number;
   uniqueContractInteractions: number;
   flagged: boolean;
+  /** Tickers among Coinbase's tokenized-equity tokens this address holds
+   * or has interacted with; always [] on base-sepolia. Never affects
+   * `score`. See the main repo's `src/scoring/score.ts` for the full
+   * definition and reasoning. */
+  tokenizedEquityExposure: string[];
 }
 
 export interface RiskScoreResult {

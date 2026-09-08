@@ -209,6 +209,8 @@ Estas preguntas se documentan explícitamente, sin resolverse por cuenta propia,
 
 8. **Política de retención de datos fuera de cadena:** el código actual no define un período de retención ni un mecanismo de borrado para los datos guardados en la base de datos propia del servidor (fuera de lo que ya queda permanentemente en la blockchain). Es una decisión de producto pendiente.
 
+9. **Una pregunta separada, planteada el 2026-09-08, sobre el activo subyacente y no sobre la actividad propia de Vouch402: ¿es México una jurisdicción elegible para el producto propio de acciones tokenizadas de EE.UU. de Coinbase** (el activo que `tokenizedEquityExposure` observa y reporta — ver `docs/TECHNICAL_SPEC.md` — no algo que Vouch402 emite, vende, ni custodia)? No se pudo confirmar en ningún sentido. Lo que sí está confirmado: Coinbase puede congelar o poner en lista negra wallets que asocie con una jurisdicción donde este producto específico no está permitido, independientemente de lo que Vouch402 haga con los datos on-chain resultantes. Esta no es la pregunta de Ley del Mercado de Valores / CNBV ya delimitada en otra parte de este proyecto (si el reporte de solo-lectura de Vouch402 sobre estos tokens cuenta como actividad de mercado de valores) — es sobre los términos propios del emisor del producto, relevante para cualquier persona en México cuya wallet llegue a tener o interactuar con estos tokens específicos, independientemente de la postura de cumplimiento propia de Vouch402. Ver `DECISION_LOG.md` para el hallazgo y la decisión resultante de mantener las atestaciones de ejemplo de esta función en testnet en lugar de mover más fondos o actividad de wallet en mainnet mientras esto siga sin resolver.
+
 ---
 
 ## 5. Jurisdicciones Restringidas
