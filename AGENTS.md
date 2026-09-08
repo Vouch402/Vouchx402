@@ -38,18 +38,15 @@ assuming what's live on npm.
 
 ## Conventions specific to this repo
 
-- **`github.com/Eras256/Vouchx402` is private** (deliberate, for another
-  grant process, unrelated to this project — not a mistake to "fix" by
-  making it public). Any public-facing surface (pitch deck, site copy,
-  README-style docs meant for outside readers) must never link to it
-  directly: it 404s for anyone not logged in as the owner. Use `/docs`
-  (the site's own public page), the npm packages, Basescan/EAS explorer
-  links, or another genuinely public destination instead — never an
-  indirect stand-in that mislabels what it points to (e.g. an npm link
-  captioned "GitHub"). Found live in production on 2026-08-30: 9 links
-  across the pitch deck and the site's shared navbar/footer/hero all
-  pointed at it. See `DECISION_LOG.md`, "Found `github.com/Eras256/Vouchx402`
-  is private" for the full audit and fixes.
+- **The repo is public, at `github.com/Vouch402/Vouchx402`** (transferred
+  from the personal `Eras256/Vouchx402` and made public 2026-09-07; the
+  old path now just redirects). It's fine to link to it from public-facing
+  surfaces again. This reverses an earlier standing rule from when the
+  repo was still private (see `DECISION_LOG.md`, "Found
+  `github.com/Eras256/Vouchx402` is private" and "GitHub repo transferred
+  to the `Vouch402` org and made public" for the full history of why that
+  rule existed and how the migration went) — don't re-apply the old
+  "never link to it" instruction to the new public path.
 - **`DECISION_LOG.md` is mandatory for anything non-trivial.** Every real
   decision, bug fix, or finding gets a dated entry: what happened, why,
   and — critically — how it was *verified*, not just that it was built.
@@ -63,7 +60,7 @@ assuming what's live on npm.
   live" claim was quietly only true of the API, not the Vercel-deployed
   frontend — see the `DECISION_LOG.md` entry on the "publicResult doesn't
   render" bug). After any change meant to be live, verify against the
-  actual production surface: `gh api repos/Eras256/Vouchx402/readme` for
+  actual production surface: `gh api repos/Vouch402/Vouchx402/readme` for
   README changes, a real page load / Playwright screenshot of
   `https://www.vouch402.xyz` for frontend changes, a real `curl` against
   `https://vouch402.fly.dev` for API changes, `gh issue view <n>` (a
