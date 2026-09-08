@@ -3373,3 +3373,52 @@ Two commits, both pushed: `1e584f5` (the 5 pitch-deck links) and
 `ac34ed8` (the 4 site-wide links + the orphaned icon file). Standing
 rule for future public-facing work added to `AGENTS.md` so this doesn't
 get rediscovered the hard way again.
+
+## 2026-09-07: GitHub repo transferred to the `Vouch402` org and made public — Vercel's stored Git link is stale, not yet confirmed safe
+
+The repo migration that had been paused since 2026-08-31 (see the
+"Revised plan" note above) was executed directly by the user via `gh`
+CLI outside this session, once the Stellar review concluded: transfer
+`Eras256/Vouchx402` → `Vouch402/Vouchx402`, landing public in the same
+step (the two-step "transfer private, flip public later" plan was
+skipped, as already decided).
+
+**Verified independently, not taken on the user's word**:
+- `gh repo view Vouch402/Vouchx402 --json isPrivate` → `false`.
+  `gh api repos/Vouch402/Vouchx402 --jq '{full_name, id, owner: .owner.login}'`
+  → `{"full_name":"Vouch402/Vouchx402","id":1332367525,"owner":"Vouch402"}`.
+- `gh repo view Eras256/Vouchx402` resolves to the exact same repo (same
+  `url`, same underlying object) — the old owner/name now just redirects,
+  matching the transfer mechanics already confirmed pre-migration.
+- Local `origin` remote still reads `github.com/Eras256/Vouchx402.git`
+  (both fetch/push) — left as-is; GitHub's redirect covers git
+  operations too, so this isn't urgent, but worth updating on the next
+  unrelated push to stop relying on the redirect indefinitely.
+
+**New finding, not yet resolved**: queried the Vercel API directly
+(`GET /v9/projects/prj_hrGeJIEIEl2eRYfdZXjFpbSrM4BF`) for the `vouch402`
+project's stored Git link — it still reads `{"org":"Eras256","repo":
+"Vouchx402", "repoId":1332367525, ...}`, i.e. Vercel has not refreshed
+the owner name since the transfer. The `repoId` matches the live repo
+exactly, which is a good sign (Vercel tracks the connection by numeric
+ID, not by name, so a bare rename/transfer often keeps working without
+a reconnect). But two things could not be confirmed from this
+environment: whether the Vercel GitHub App's installation still has
+access to the repo under its new owner (`gh api orgs/Vouch402/installations`
+returned zero installations, though that endpoint may just not be the
+right one for an app installed at the personal-account level pre-
+transfer — inconclusive, not evidence either way), and
+`repos/Vouch402/Vouchx402/hooks` returned empty, which is also
+inconclusive since the Vercel integration runs through the GitHub App
+event flow rather than classic webhooks.
+
+**Not yet done — needs a human check in each dashboard, not just API
+calls**: confirm in Vercel's own UI (Project Settings → Git) whether it
+shows a "reconnect your Git repository" warning, and in GitHub (the
+`Vouch402` org's Settings → Installations) whether the Vercel app is
+listed with access to `Vouchx402`. The current production deployment is
+not evidence either way — it was already running before the transfer
+and doesn't require the Git connection to stay up. Do not treat this as
+resolved until one of those two checks confirms it directly, and do not
+test it with a real push until that's done, per this project's own
+standing "committed is not live" rule applied to infra, not just code.
