@@ -3422,3 +3422,21 @@ and doesn't require the Git connection to stay up. Do not treat this as
 resolved until one of those two checks confirms it directly, and do not
 test it with a real push until that's done, per this project's own
 standing "committed is not live" rule applied to infra, not just code.
+
+**Resolved, same day**: the user opened Project Settings → Git in the
+Vercel dashboard themselves (screenshot). It showed "Connected Git
+Repository: `Vouch402/Vouchx402`" (correct new org) plus a "Git
+repository reconnected." toast — Vercel's own explicit re-establish
+action for exactly this kind of ownership change.
+
+One loose end, disclosed rather than smoothed over: re-querying the
+same `GET /v9/projects/{id}` endpoint afterward still returns the
+identical stale `link.org: "Eras256"` with an unchanged `updatedAt`
+timestamp — the dashboard's live-resolved display and this particular
+API field disagree. Read as that field being legacy/cosmetic (the
+dashboard clearly resolves current ownership correctly via `repoId` +
+`gitCredentialId`, both unchanged and matching the real repo throughout),
+not as evidence the reconnect didn't take — but this wasn't independently
+proven by a real push, only by the dashboard's own explicit confirmation.
+If a future push's auto-deploy doesn't fire, this is the first place to
+recheck.
