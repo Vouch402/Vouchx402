@@ -3446,14 +3446,31 @@ project's own deployment history: `df8472e` → build within ~20 minutes
 of push in the 2026-08-29/30 log entries above, and typically much
 faster).
 
-**Genuinely unresolved as of this writing.** The `link.org: "Eras256"`
-staleness noted above may or may not be connected to this — not
-determined either way. Next step needs the second dashboard check that
-was asked for originally and never actually completed: GitHub →
-`Vouch402` org → Settings → Installations, confirming the Vercel
-GitHub App is listed there with access to `Vouchx402` (not just that
-Vercel's own UI says "connected" — Vercel's side of a broken connection
-can show stale-optimistic state). Do not push real feature work
-assuming auto-deploy works until this is confirmed; use `fly deploy`/
-manual `vercel --prod` or a manual redeploy trigger in the interim if a
-frontend change needs to go live before this is fixed.
+**Actually resolved — confirmed by a second real push, not just a
+dashboard toast.** The first push (`94825d8`..`6afc6a9`) produced no
+deployment after 90+ seconds of polling, which is what triggered the
+"genuinely unresolved" call above. At the user's direction ("intentá
+una última vez, y si no, `vercel --prod`"), pushed one more real commit
+(`eb2c6a8`) and polled again: this time a deployment appeared within
+~90 seconds (`BUILDING`, commit `eb2c6a8e208bb7427f26f0a803e5fe0da65985d7`),
+reached `READY` shortly after, `target: "production"`, and
+`https://www.vouch402.xyz` returned `200` immediately after. The manual
+`vercel --prod` fallback was not needed.
+
+**Best explanation for the first push's silence, not fully provable**:
+timing. The dashboard reconnect happened only shortly before the first
+push; if GitHub's App-installation propagation to the new org lagged
+behind the UI's own "reconnected" confirmation by more than the 90-
+second window polled, the first webhook could have been dropped or
+sent to a not-yet-valid target while the second landed cleanly once
+propagation caught up. Not independently confirmed via GitHub's own
+delivery logs (no access to the Vercel App's delivery history as an
+installer, only as the app owner) — stated as the likely explanation,
+not a proven one.
+
+**Status now: working, verified end-to-end.** Treat auto-deploy as
+functional for future pushes. If a future push ever goes quiet again
+past ~2 minutes, the still-untouched follow-up from the earlier
+correction remains valid: check GitHub → `Vouch402` org → Settings →
+Installations for the Vercel App's listing, since that's the one check
+never actually completed in this whole thread.
