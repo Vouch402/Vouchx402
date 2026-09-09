@@ -3906,3 +3906,61 @@ which resolves via plain `eth_getTransactionReceipt` (`status: 0x1`,
 transaction hash this time, not a userOp hash. The Blockscout retry fix
 from earlier this same day held too (27 days, 3 contracts, correct on
 the first real request after deploy, no retry needed to observe).
+
+## 2026-09-09: Full frontend + pitch audit, requested directly ahead of the Batches 004 deadline — found and fixed a real, site-wide gap
+
+The user asked, plainly: make sure the whole frontend and pitch are
+complete and up to date with everything this project has, including
+tokenized equities, Base Pay, and anything else. Went through every
+pitch slide (all 8) and the shared site chrome (navbar, footer, mobile
+menu) systematically rather than spot-checking.
+
+**Real, concrete gap found**: the repo went public 2026-09-07 (see
+above), and `AGENTS.md`'s "never link to it" rule was reversed the same
+day — but the actual GitHub links that rule had required removing on
+2026-08-30 (`pitch-cover.tsx`, `pitch-links.tsx`, `navbar.tsx`,
+`footer.tsx`, `mobile-menu.tsx`) were never restored. The site had been
+silently missing a real, working GitHub link everywhere, on both the
+pitch deck and the live site, for two days after the repo had every
+right to be linked again. Restored all five, plus a `mobile-menu.tsx`
+entry that didn't exist even before removal (the mobile nav sheet only
+ever rendered `NAV_LINKS`, no external links) — one more real link than
+what was there originally, not just a revert.
+
+Also fixed the one remaining stale reference the 2026-09-07 migration
+memory had flagged as "not urgent, fix whenever `/legal` is next
+touched": `legal-en.md`/`legal-es.md`'s contact-info line still named
+`Eras256/Vouchx402`; now `Vouch402/Vouchx402`.
+
+**Two real content gaps, not just broken links**: the pitch never
+mentioned the live "Try It" Base Pay demo at all — a working,
+one-click, no-CLI way for a reviewer to try the actual product with a
+real Coinbase Smart Wallet payment, absent from every slide. Added to
+the Links slide (`pitch-links.tsx`): `"Try it live (Base Pay, real
+mainnet payment)"` -> `/#try-it`. Separately, `pitch-tokenized-equities.tsx`'s
+"Prototype" block only ever linked to the single original 2026-08-29
+attestation; today's 3 new testnet examples (AAPLc/GOOGLc/TSLAc, see
+earlier this same day) had no path from the pitch deck at all. Added a
+second link there pointing at the live site's new "Demo — Base Sepolia"
+section (`/#live-activity`) rather than hardcoding all 3 new UIDs into
+the pitch component directly — the site section is the canonical,
+already-built place to see them.
+
+**Verified, not assumed**: `npx tsc --noEmit` and a full `npm run build`
+(web/) both clean. Started the dev server and curled the actual
+rendered HTML of `/`, `/pitch`, and `/legal` directly, confirming exact
+match counts for every new link (2 on the shared layout × present on
+all 3 pages, plus the pitch-specific cover/links additions and the two
+new tokenized-equity/Try-It links) — not just that the build succeeded.
+Grepped the whole `web/` tree afterward for any remaining
+`Eras256/Vouchx402` reference: none.
+
+**Reviewed and left alone, deliberately, not overlooked**: the
+`hero.tsx` secondary GitHub CTA that was removed 2026-08-30 was not
+restored — that removal's own reasoning ("the hero's existing
+real-attestation proof panel already served the 'concrete evidence'
+role the removed button was reaching for") was about de-cluttering a
+single-CTA hero, unrelated to the repo's privacy, and still holds.
+`pitch-ecosystem.tsx`'s plugin link (`Eras256/skills`, a separate,
+always-public fork repo) was never affected by any of this and needed
+no change.

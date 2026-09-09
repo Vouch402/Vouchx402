@@ -4,6 +4,10 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 const API_URL = "https://vouch402.fly.dev";
+// Repo went public 2026-09-07 (github.com/Vouch402/Vouchx402); restores
+// the link removed 2026-08-30 while it was still private. See AGENTS.md
+// and DECISION_LOG.md.
+const GITHUB_URL = "https://github.com/Vouch402/Vouchx402";
 
 export function Footer() {
   const t = useTranslations("footer");
@@ -21,6 +25,14 @@ export function Footer() {
           <Link href="/legal" className="text-muted-foreground transition-colors hover:text-foreground">
             {t("legal")}
           </Link>
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t("github")}
+          </a>
           <a
             href={API_URL}
             target="_blank"

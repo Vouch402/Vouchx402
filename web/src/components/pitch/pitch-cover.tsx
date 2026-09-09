@@ -7,12 +7,12 @@ import { PitchSlide } from "./pitch-slide";
 export function PitchCover() {
   const t = useTranslations("pitch");
 
-  // No GitHub link here: the repo is private (a deliberate, unrelated
-  // decision for another grant process), so a "GitHub" link would 404
-  // for any real visitor. Not replaced with something indirect that
-  // would mislabel what it points to -- see DECISION_LOG.md.
+  // Repo went public 2026-09-07 (github.com/Vouch402/Vouchx402); the
+  // earlier "no GitHub link, repo is private" rule is reversed -- see
+  // AGENTS.md and DECISION_LOG.md.
   const links = [
     { label: t("cover.links.docs"), href: "/docs" },
+    { label: t("cover.links.github"), href: "https://github.com/Vouch402/Vouchx402" },
     { label: t("cover.links.sdk"), href: "https://www.npmjs.com/package/vouch402-sdk" },
   ];
 

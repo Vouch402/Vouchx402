@@ -22,7 +22,7 @@ Vouch402 **no es una wallet, no es un exchange, no es una plataforma de custodia
 
 La Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP) exige que el Aviso de Privacidad identifique al responsable del tratamiento de datos y su domicilio (Art. 15 y 16 de la LFPDPPP, texto vigente citado en 1.7 abajo). **Verificado contra el repositorio del proyecto: no existe actualmente una razón social, RFC, ni domicilio fiscal registrados en ningún archivo del proyecto** (el `LICENSE` solo dice "Copyright (c) 2026 Vouch402", sin persona física o moral identificada). Este campo queda como **PENDIENTE**: no se puede publicar un Aviso de Privacidad legalmente completo sin esta información. Ver sección 4, pregunta 3.
 
-Hasta que exista una entidad identificada, el único canal de contacto real del proyecto es su repositorio público en GitHub: `https://github.com/Eras256/Vouchx402`.
+Hasta que exista una entidad identificada, el único canal de contacto real del proyecto es su repositorio público en GitHub: `https://github.com/Vouch402/Vouchx402`.
 
 ### 1.2 Datos que se recaban (verificado contra el código, no una lista genérica)
 

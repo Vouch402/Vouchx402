@@ -5,6 +5,7 @@
     "liveActivity": "Live activity",
     "tryIt": "Try it",
     "docs": "Docs",
+    "github": "GitHub",
     "menu": "Menu"
   },
   "selectors": {
@@ -26,6 +27,7 @@
   "footer": {
     "tagline": "x402-metered on-chain risk intelligence for autonomous agents on Base.",
     "docs": "Docs",
+    "github": "GitHub",
     "legal": "Legal",
     "api": "Live API",
     "copyright": "© {year} Vouch402"
@@ -181,6 +183,7 @@
       "summary": "An x402-metered risk-score API for Base addresses, with an on-chain attestation layer recording whether every paid request was actually fulfilled.",
       "links": {
         "docs": "Docs",
+        "github": "GitHub",
         "sdk": "npm: vouch402-sdk"
       }
     },
@@ -270,7 +273,8 @@
       },
       "links": {
         "attestation": "View the live attestation",
-        "contract": "{ticker} on Basescan"
+        "contract": "{ticker} on Basescan",
+        "moreExamples": "3 more live examples on the site"
       },
       "closing": "Read-only throughout, by design: Vouch402 reports facts about tokenized-equity addresses. It never buys, sells, or custodies the underlying tokens."
     },
@@ -284,6 +288,8 @@
       "eyebrow": "Links",
       "title": "Links",
       "docs": "Technical documentation",
+      "github": "Source code on GitHub",
+      "tryIt": "Try it live (Base Pay, real mainnet payment)",
       "sdk": "vouch402-sdk on npm",
       "cli": "vouch402 CLI on npm",
       "mcpServer": "vouch402-mcp-server on npm",

@@ -10,6 +10,11 @@ import { NetworkSelector } from "./network-selector";
 import { ThemeSelector } from "./theme-selector";
 import { MobileMenu } from "./mobile-menu";
 
+// Repo went public 2026-09-07 (github.com/Vouch402/Vouchx402); restores
+// the link removed 2026-08-30 while it was still private. See AGENTS.md
+// and DECISION_LOG.md.
+const GITHUB_URL = "https://github.com/Vouch402/Vouchx402";
+
 export function Navbar() {
   const t = useTranslations("nav");
 
@@ -35,6 +40,16 @@ export function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-0.5 lg:flex">
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            render={
+              <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+                {t("github")}
+              </a>
+            }
+          />
           <LanguageSelector />
           <NetworkSelector />
           <ThemeSelector />

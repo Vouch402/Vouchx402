@@ -8,9 +8,12 @@ import { PitchSlide } from "./pitch-slide";
 export function PitchLinks() {
   const t = useTranslations("pitch.links");
 
-  // No GitHub link here: the repo is private (a deliberate, unrelated
-  // decision for another grant process). See DECISION_LOG.md.
+  // Repo went public 2026-09-07 (github.com/Vouch402/Vouchx402); the
+  // earlier "no GitHub link, repo is private" rule is reversed -- see
+  // AGENTS.md and DECISION_LOG.md.
   const externalLinks = [
+    { key: "github", href: "https://github.com/Vouch402/Vouchx402" },
+    { key: "tryIt", href: "https://www.vouch402.xyz/#try-it" },
     { key: "sdk", href: "https://www.npmjs.com/package/vouch402-sdk" },
     { key: "cli", href: "https://www.npmjs.com/package/vouch402" },
     { key: "mcpServer", href: "https://www.npmjs.com/package/vouch402-mcp-server" },
