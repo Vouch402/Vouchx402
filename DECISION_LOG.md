@@ -3672,3 +3672,39 @@ rate-limited. Open, unresolved as of this entry:
 - No refund/remediation decided yet for payment 2's real, unrecoverable
   0.01 USDC — small in dollar terms, but a real instance of the failure
   mode a real customer could hit.
+
+## 2026-09-09: Swapped production's RPC to new QuickNode endpoints — verified they still carry the identical 15/second limit, not yet a real fix
+
+The user provided two new QuickNode endpoint URLs (dedicated per-network:
+`base-mainnet` and `base-sepolia`) to address the rate-limit incident
+above. Applied and verified with real output, not just the command's own
+success message:
+
+- Both endpoints checked live before wiring in: `eth_chainId` returns
+  `0x2105` (8453, Base mainnet) and `0x14a34` (84532, Base Sepolia)
+  respectively — correct network each.
+- `.env` (gitignored, not committed) updated with both.
+- `fly secrets set --app vouch402 BASE_RPC_URL=... BASE_SEPOLIA_RPC_URL=...`
+  — `fly secrets list` afterward confirms both `Deployed` with new
+  digests (`BASE_SEPOLIA_RPC_URL` newly added; production doesn't
+  actually read it while `NETWORK=base`, added for parity/future-proofing
+  only). The secret update triggered Fly's automatic rolling restart;
+  `fly logs` shows a clean restart (`Vouch402 listening on :3402
+  (network=base)`, health check passing after one normal transient
+  failure at boot) and `https://vouch402.fly.dev/v1/metrics` returns
+  `200` afterward.
+
+**Not actually a fix for the underlying bug, confirmed rather than
+assumed**: fired 20 near-simultaneous `eth_chainId` calls at the new
+mainnet endpoint before switching production over. Identical result to
+yesterday's incident: the first 15 succeeded, the next 5 immediately
+returned the same `-32007 "15/second request limit reached"`. Whatever
+plan this new endpoint is on has the same per-second ceiling as the one
+that caused the original incident. Swapping the URL may still help if
+the old endpoint was shared with unrelated load, but it does **not**, by
+itself, remove the risk of `attestFulfillment`'s primary attempt and its
+own error-status fallback both landing in the same rate-limited window
+again under real concurrent traffic. The two open items from the
+previous entry (retry/backoff around the RPC calls in
+`attestFulfillment`, and/or an actual plan upgrade past 15 req/s) remain
+unresolved — this was a direct swap, not a resolution of either.
