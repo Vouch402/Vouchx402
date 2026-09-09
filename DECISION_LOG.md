@@ -3708,3 +3708,86 @@ again under real concurrent traffic. The two open items from the
 previous entry (retry/backoff around the RPC calls in
 `attestFulfillment`, and/or an actual plan upgrade past 15 req/s) remain
 unresolved — this was a direct swap, not a resolution of either.
+
+## 2026-09-09: Fixed — retry the QuickNode rate limit at the RPC transport level, verified against real Base Sepolia traffic
+
+Real code fix for the bug above, not deferred any further. First attempt
+wrapped the high-level SDK calls (`eas.attest()`, `tx.wait()`) in
+`attestFulfillment` with a whole-call retry — built, typechecked, then
+tested against real Base Sepolia via `npm test`. That test run itself
+reproduced the live bug twice while proving the fix incomplete:
+
+1. The fulfillment-attestation half of the first version worked
+   (`[Phase 2] Gate met: fulfillment attestation independently resolved
+   and verified via EAS`, under real rate-limit pressure), but the
+   *dispute* flow immediately hit the identical `-32007` on
+   `eth_getBlockByNumber` and failed — `src/attestation/dispute.ts` has
+   the exact same unretried `eas.attest()`/`tx.wait()` pattern as
+   `middleware.ts`, just never touched by the first pass.
+2. After adding the same whole-call retry to `dispute.ts` too, a second
+   test run hit `-32007` again, this time on `eth_getTransactionReceipt`
+   — deep inside `tx.wait()`'s own internal polling. A whole-call retry
+   only re-tries after `wait()` has already given up, by which point its
+   internal polling loop has usually made several more calls of its own
+   and can trip the same limit again before the outer retry's backoff
+   even applies.
+
+**Actual fix**: moved the retry one layer down, to
+`JsonRpcProvider.send()` itself (`RetryingJsonRpcProvider` in
+`src/lib/eas.ts`) — every individual RPC call the ethers signer makes,
+whichever SDK method triggered it, retries in place with backoff spaced
+past QuickNode's one-second window (up to 6 attempts, ~1.1s-7.7s spacing)
+before giving up. Kept structurally separate from the existing
+`withNonceRetry`: a nonce race needs the whole `sendTransaction` call
+re-run to re-derive a fresh nonce from scratch, not just the same signed
+call replayed, so it stays a distinct, higher-level retry.
+
+**Verified against real, concurrent on-chain traffic, not just a code
+read or a single passing test**: `npm run build` clean, then the full
+`npm test` suite (6 files, 22 tests, real Base Sepolia transactions
+running with real concurrency — exactly the condition that surfaced the
+original incident) passes clean, `Test Files 6 passed (6) / Tests 22
+passed (22)`, immediately after two consecutive runs of the same suite
+had hit the live `-32007` error under the two prior versions of this
+fix. Deployed to production immediately after
+(`fly deploy --app vouch402`) so the two mainnet payments requested next
+run against the fixed code, not the version that caused the original
+incident.
+
+## 2026-09-09: Found and fixed a second, separate bug — Blockscout's `txlist` endpoint transiently erroring reads as a brand-new wallet instead of a degraded read
+
+Surfaced by the first of the two mainnet payments above landing cleanly
+(the RPC fix worked — real `200`, real attestation, correct on the
+activity feed), but with `walletAgeDays: 0` and `uniqueContractInteractions:
+0` for the dev wallet — implausible for an address that's sent real EAS
+attestations and USDC transfers throughout this project's life. The user
+asked directly whether a nonzero-contracts example was even possible,
+which is what prompted checking rather than assuming the signal was
+just genuinely zero.
+
+**Root cause, confirmed live, not inferred**: `curl`'d Blockscout's own
+`txlist` endpoint directly for the dev wallet three times in a row —
+attempt 1 returned `{"message":"Something went wrong.","result":null,
+"status":"0"}`, attempts 2 and 3 (seconds later) returned normally with
+37 and 39 real transactions. `src/scoring/score.ts`'s `fetchTxHistory`
+(doc comment already stated its own design intent plainly: "Returns []
+if the request fails... a degraded signal, never a hard error") had no
+retry at all — a single transient blip like the one just reproduced
+silently degrades straight to `walletAgeDays: 0`, `uniqueContractInteractions: 0`,
+indistinguishable from a genuinely fresh, zero-activity address. Computed
+what the real numbers should have been from a successful response:
+`uniqueContractInteractions: 3` (EAS's Schema Registry, USDC, and EAS
+itself — all real, expected contracts for this wallet) and
+`walletAgeDays: 27`, not 0.
+
+**Fix**: added retry (3 attempts, 500ms-based backoff) inside
+`fetchTxHistory` before falling back to `[]` — same shape as this
+project's other explorer/RPC retry helpers (`getAttestationWithRetry` in
+`src/lib/eas.ts`), and deliberately preserves the existing "never a hard
+error, degrade gracefully" behavior for a *genuinely* persistent failure
+or a truly fresh wallet; only adds resilience against a transient one.
+
+**Verified**: `npm run build` clean, full `npm test` (6 files, 22 tests,
+real Base Sepolia) passes clean. Deployed to production
+(`fly deploy --app vouch402`) before the second mainnet payment requested
+in the entry above, so that payment gets the corrected signal too.
