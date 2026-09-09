@@ -1,6 +1,6 @@
 {
   "name": "vouch402",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "CLI for Vouch402: x402-metered on-chain risk scores for Base addresses, with EAS fulfillment attestations.",
   "type": "module",
   "bin": {

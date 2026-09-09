@@ -56,6 +56,20 @@ raw) key for exactly that single-user, run-it-yourself case.
   not a human clicking a checkbox, so whatever is orchestrating this
   tool call must set this explicitly, never assume it.
 
+### The `tokenizedEquityExposure` signal
+
+The score `fetch_risk_score` returns includes
+`signals.tokenizedEquityExposure`: a list of tickers (e.g. `["AAPLc",
+"TSLAc"]`, `[]` if none) among Coinbase's Base-mainnet tokenized-equity
+tokens the scored address currently holds or has ever transacted with.
+Just the tickers — no balance, no share count, no dollar amount — and
+it never affects `score`: it's a named fact, not a risk input. Always
+`[]` on Base Sepolia, since these tokens only exist on mainnet. See the
+root [README](../README.md#tokenized-equity-risk-signal) for the full
+signal definition, and
+[`tokenized-equities.json`](../src/scoring/tokenized-equities.json) for
+the complete, independently-verified contract list.
+
 ## Usage
 
 Add to your MCP client's config (`.mcp.json` for Claude Code, or the
