@@ -287,6 +287,17 @@
     "links": {
       "eyebrow": "Links",
       "title": "Links",
+      "team": {
+        "title": "Team",
+        "eras256": {
+          "name": "Eras256",
+          "role": "Base DevRel ambassador, ETHUruguay 2025 winner, 1st place in the creator-economy track at ETHMexico Monterrey"
+        },
+        "monsxx": {
+          "name": "Monse (M0nsxx)",
+          "role": "Co-founder, ETHUruguay 2025 winner"
+        }
+      },
       "docs": "Technical documentation",
       "github": "Source code on GitHub",
       "tryIt": "Try it live (Base Pay, real mainnet payment)",
