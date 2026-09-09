@@ -63,6 +63,15 @@ export function PitchTokenizedEquities() {
             {t("links.attestation")}
             <ArrowUpRight className="size-3.5" aria-hidden="true" />
           </a>
+          <a
+            href="https://www.vouch402.xyz/#live-activity"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-primary hover:underline"
+          >
+            {t("links.moreExamples")}
+            <ArrowUpRight className="size-3.5" aria-hidden="true" />
+          </a>
         </div>
       </div>
 

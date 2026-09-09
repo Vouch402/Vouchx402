@@ -13,6 +13,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { NAV_LINKS } from "./nav-links";
 
 const LANGUAGE_LABELS: Record<string, string> = { en: "English", es: "Español" };
+// Repo went public 2026-09-07 (github.com/Vouch402/Vouchx402); restores
+// the link removed 2026-08-30 while it was still private. See AGENTS.md
+// and DECISION_LOG.md.
+const GITHUB_URL = "https://github.com/Vouch402/Vouchx402";
 
 /**
  * The main responsive design challenge on this page: three independent
@@ -63,6 +67,14 @@ export function MobileMenu() {
               {t(link.labelKey)}
             </Link>
           ))}
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+          >
+            {t("github")}
+          </a>
         </nav>
 
         <Separator className="my-4" />

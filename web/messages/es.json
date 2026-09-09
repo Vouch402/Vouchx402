@@ -5,6 +5,7 @@
     "liveActivity": "Actividad en vivo",
     "tryIt": "Pruébalo",
     "docs": "Documentación",
+    "github": "GitHub",
     "menu": "Menú"
   },
   "selectors": {
@@ -26,6 +27,7 @@
   "footer": {
     "tagline": "Inteligencia de riesgo on-chain para agentes autónomos en Base, medida con x402.",
     "docs": "Documentación",
+    "github": "GitHub",
     "legal": "Legal",
     "api": "API en vivo",
     "copyright": "© {year} Vouch402"
@@ -181,6 +183,7 @@
       "summary": "Una API de puntaje de riesgo medida por x402 para direcciones de Base, con una capa de attestations on-chain que registra si cada solicitud pagada realmente se cumplió.",
       "links": {
         "docs": "Docs",
+        "github": "GitHub",
         "sdk": "npm: vouch402-sdk"
       }
     },
@@ -270,7 +273,8 @@
       },
       "links": {
         "attestation": "Ver la atestación en vivo",
-        "contract": "{ticker} en Basescan"
+        "contract": "{ticker} en Basescan",
+        "moreExamples": "3 ejemplos más en vivo en el sitio"
       },
       "closing": "Solo lectura de punta a punta, por diseño: Vouch402 reporta hechos sobre direcciones con exposición a acciones tokenizadas. Nunca compra, vende, ni custodia los tokens subyacentes."
     },
@@ -284,6 +288,8 @@
       "eyebrow": "Enlaces",
       "title": "Enlaces",
       "docs": "Documentación técnica",
+      "github": "Código fuente en GitHub",
+      "tryIt": "Probalo en vivo (Base Pay, pago real en mainnet)",
       "sdk": "vouch402-sdk en npm",
       "cli": "CLI vouch402 en npm",
       "mcpServer": "vouch402-mcp-server en npm",

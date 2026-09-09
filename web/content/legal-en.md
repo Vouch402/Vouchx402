@@ -24,7 +24,7 @@ Vouch402 **is not a wallet, not an exchange, not a custody platform, and does no
 
 Mexico's Federal Law on the Protection of Personal Data Held by Private Parties (LFPDPPP) requires that a privacy notice identify the data controller and its address (LFPDPPP Arts. 15 and 16, current text cited in 1.7 below). **Verified against the project's repository: there is currently no registered legal entity name, tax ID (RFC), or business address anywhere in the project's files** (the `LICENSE` file only says "Copyright (c) 2026 Vouch402," with no natural or legal person identified). This field remains **PENDING**: a legally complete privacy notice cannot be published without this information. See section 4, question 3.
 
-Until an identified entity exists, the project's only real point of contact is its public GitHub repository: `https://github.com/Eras256/Vouchx402`.
+Until an identified entity exists, the project's only real point of contact is its public GitHub repository: `https://github.com/Vouch402/Vouchx402`.
 
 ### 1.2 Data collected (verified against the code, not a generic checklist)
 
