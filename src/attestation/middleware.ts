@@ -63,6 +63,12 @@ export async function attestFulfillment(
     { name: "fulfilledAt", type: "uint64", value: BigInt(Math.floor(Date.now() / 1000)) },
   ]);
 
+  // The RPC rate-limit resilience for this send + wait lives one layer
+  // down, in RetryingJsonRpcProvider (src/lib/eas.ts) -- it retries the
+  // individual RPC call that actually hits the limit (send, or whichever
+  // read tx.wait() is polling with at that moment), rather than retrying
+  // these SDK-level calls as a whole. See that file for why: DECISION_LOG.md,
+  // 2026-09-08, the incident this exists to prevent.
   const eas = getEas(params.network);
   const tx = await eas.attest({
     schema: schemaUid,

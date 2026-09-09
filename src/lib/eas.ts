@@ -13,16 +13,63 @@ import { withAttribution } from "./attribution";
 export const EAS_ADDRESS = "0x4200000000000000000000000000000000000021";
 export const SCHEMA_REGISTRY_ADDRESS = "0x4200000000000000000000000000000000000020";
 
+function isRateLimitError(err: unknown): boolean {
+  const message = (err as { shortMessage?: string; message?: string })?.shortMessage ?? (err as Error)?.message ?? "";
+  const nestedCode = (err as { error?: { code?: number } })?.error?.code;
+  return nestedCode === -32007 || /-32007|request limit|rate limit/i.test(message);
+}
+
 /**
- * Same class of public-RPC inconsistency as `getAttestationWithRetry`
- * below, on the write path this time: a payment tx confirms via one RPC
- * call, then the very next `sendTransaction` (for the fulfillment
- * attestation, same address) reads "pending" nonce from a Cloudflare
- * backend node that hasn't caught up yet, computes an already-used nonce,
- * and the resend is rejected as `REPLACEMENT_UNDERPRICED`, observed live
- * against `sepolia.base.org` (see DECISION_LOG.md), not hypothetical.
- * Retrying re-triggers ethers' own nonce lookup from scratch each time,
- * which self-heals once propagation catches up.
+ * Retries QuickNode's own rate limit (`-32007 "N/second request limit
+ * reached"`), one raw RPC call at a time. Added after a real incident
+ * (DECISION_LOG.md, 2026-09-08): this error hit `attestFulfillment`'s
+ * send and its `tx.wait()` confirmation poll back to back, taking out
+ * both a real fulfillment attestation *and* the error-status fallback
+ * that exists specifically to leave an honest record when something else
+ * fails -- leaving a real paid request with no on-chain record at all.
+ *
+ * Deliberately placed at the `JsonRpcProvider.send()` level, not around
+ * higher-level calls like `tx.wait()`: `wait()` polls with its own mix of
+ * `eth_getTransactionReceipt`/`eth_getBlockByNumber` calls, and any one
+ * of them can be the one that gets rate-limited -- wrapping `wait()` as a
+ * whole only retries after it's already given up, by which point its own
+ * internal polling has usually made several more calls and can dig the
+ * same hole again. Retrying at the single-call level catches whichever
+ * call actually hit the limit, immediately, without resending anything
+ * that isn't that one read or write. Confirmed necessary in practice: a
+ * high-level-only version of this fix (retrying `attestFulfillment`'s
+ * `eas.attest()`/`tx.wait()` as whole calls) still failed on
+ * `dispute.ts`'s identical pattern in a real `npm test` run, then failed
+ * again on `eth_getTransactionReceipt` deep inside `wait()`'s own polling
+ * even after that fix, before this lower-level version was written.
+ */
+class RetryingJsonRpcProvider extends JsonRpcProvider {
+  override async send(method: string, params: unknown[] | Record<string, unknown>): Promise<unknown> {
+    const retries = 6;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await super.send(method, params);
+      } catch (err) {
+        if (!isRateLimitError(err) || attempt >= retries) throw err;
+        // QuickNode's window is per-second; space attempts a full
+        // second-plus apart so the same window isn't hit again immediately.
+        await new Promise((resolve) => setTimeout(resolve, 1100 * (attempt + 1)));
+      }
+    }
+  }
+}
+
+/**
+ * A payment tx confirms via one RPC call, then the very next
+ * `sendTransaction` (for the fulfillment attestation, same address) reads
+ * "pending" nonce from a Cloudflare backend node that hasn't caught up
+ * yet, computes an already-used nonce, and the resend is rejected as
+ * `REPLACEMENT_UNDERPRICED`, observed live against `sepolia.base.org`
+ * (see DECISION_LOG.md), not hypothetical. Retrying re-triggers ethers'
+ * own nonce lookup from scratch each time, which self-heals once
+ * propagation catches up. Kept separate from `RetryingJsonRpcProvider`
+ * above: a nonce race needs the *whole* `sendTransaction` call re-run to
+ * re-derive a fresh nonce, not just the underlying RPC call replayed.
  */
 async function withNonceRetry<T>(fn: () => Promise<T>, { retries = 4, delayMs = 800 }: { retries?: number; delayMs?: number } = {}): Promise<T> {
   for (let attempt = 0; ; attempt++) {
@@ -60,7 +107,7 @@ let cachedSigner: { network: NetworkName; signer: EthersWallet } | undefined;
 export function getEasSigner(network: NetworkName): EthersWallet {
   if (cachedSigner?.network === network) return cachedSigner.signer;
   const { privateKey } = loadDeployerAccount();
-  const provider = new JsonRpcProvider(rpcUrlFor(network));
+  const provider = new RetryingJsonRpcProvider(rpcUrlFor(network));
   const signer = new AttributedWallet(privateKey, provider);
   cachedSigner = { network, signer };
   return signer;

@@ -81,6 +81,10 @@ export async function submitDispute(params: SubmitDisputeParams): Promise<{ uid:
     { name: "details", type: "string", value: params.details },
   ]);
 
+  // Rate-limit resilience lives in RetryingJsonRpcProvider (src/lib/eas.ts),
+  // one layer below this call -- see that file's comment for why. Found
+  // this exact code path hitting the QuickNode rate limit live via a real
+  // `npm test` run, same day as the middleware.ts incident: DECISION_LOG.md.
   const tx = await eas.attest({
     schema: schemaUid,
     data: {
