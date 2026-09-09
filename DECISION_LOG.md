@@ -3964,3 +3964,54 @@ single-CTA hero, unrelated to the repo's privacy, and still holds.
 `pitch-ecosystem.tsx`'s plugin link (`Eras256/skills`, a separate,
 always-public fork repo) was never affected by any of this and needed
 no change.
+
+## 2026-09-09: Backfilled payment 1's orphaned attestation into production's `attestations` table
+
+Closes the one still-open item from the "QuickNode rate limit" incident
+(above): payment 1's real, on-chain, independently-verified fulfillment
+attestation (`0x94270af6231d546e997f2d2ca60e70b733ef9f5d070be816976e430c330cee05`)
+existed on EAS but was never recorded in production's own database, so
+`/v1/metrics`'s `attestationCount` undercounted by one against reality.
+User's own call, deliberately scoped narrow: write the one fact already
+independently verified (via `cast` + EAS GraphQL, days earlier), don't
+reconstruct or investigate anything new.
+
+**Minimal, honest scope, chosen deliberately**: only inserted into the
+`attestations` table (`uid, status, payer, payee, network, created_at`)
+— exactly the fields already confirmed on-chain. Did **not** attempt to
+backfill `requests_served` or `public_results`, both of which require a
+`score` value. That score was genuinely computed by the server at the
+time (before the rate-limit failure), but never returned to any client
+and isn't recoverable now without guessing — and a guessed score risks
+mismatching the attestation's own immutable `responseHash`, which
+commits to the exact original response payload. `getRecentActivity()`'s
+`attestations LEFT JOIN public_results` means the row surfaces on
+`/v1/activity` correctly either way: as a plain "Fulfilled" item with no
+`publicResult`, the same shape any non-`makePublic` payer's row already
+takes — not wrong, just less detailed than the dev wallet's other rows,
+honestly reflecting what's actually recoverable.
+
+**Mechanism**: `fly ssh console --app vouch402`, then `node:sqlite`'s
+`DatabaseSync` directly against `/data/vouch402.sqlite` (the same file
+and module the running server uses) — first a read-only check
+confirming the row didn't already exist and the pre-insert count (16
+total, unfiltered), then the insert itself. `created_at` used the
+attestation's real on-chain `fulfilledAt` timestamp
+(`1788856681000` ms), not the backfill's own wall-clock time, so
+`/v1/activity`'s ordering and "time ago" display reflect when the
+payment actually happened, not when this was fixed.
+
+**Verified three ways, not just "the INSERT didn't error"**: re-queried
+the DB directly afterward (row present, `network` byte-exact `"base"`);
+`https://vouch402.fly.dev/v1/activity?network=base` returns the item,
+correctly with no `publicResult`; `https://vouch402.fly.dev/v1/metrics?network=base`
+shows `attestationCount: 16` — a real +1 over the pre-backfill `base`-only
+count of 15 (the raw 16 seen pre-insert was 15 `base` + 1
+pre-existing, unrelated `base-sepolia` row already in the same table;
+briefly looked like a discrepancy until grouping by network showed it
+was an apples-to-oranges comparison, not a real problem).
+
+**Still open, unchanged from the original incident, not attempted
+today per the user's own explicit call**: no remediation for payment
+2's real, unrecoverable 0.01 USDC loss — trivial in dollar terms, and
+there's no attestation to reconcile it against. Left as-is.
