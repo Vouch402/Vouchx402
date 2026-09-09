@@ -3810,3 +3810,83 @@ tests.
   Neither hit any internal error or rate-limit failure — the RPC fix
   from the previous entry held under two more real, back-to-back
   mainnet payments.
+
+## 2026-09-09: Correction — Try It's real Base Pay flow was always sending the wrong hash; the 2026-08-12 verification that it wasn't was never actually run end to end
+
+The user tried the live "Try It" demo's Base Pay button for real
+(paying 0.01 USDC via a Coinbase Smart Wallet / passkey account, the
+`keys.coinbase.com` popup) and hit `"Payment transaction not yet
+confirmed on-chain; retry shortly."` — the API's normal 402 signal for
+a genuinely-pending payment. It never cleared, even after the retries
+already built into `fetchRiskScoreWithProof` (`web/src/lib/vouch402.ts`).
+
+**Root cause, confirmed against real on-chain data, not inferred**: the
+`txHash` the frontend sends is `payment.id` from `@base-org/account`'s
+`pay()`. For this smart-wallet flow, that value is a **userOp hash**,
+not a real, independently-resolvable L1 transaction hash — confirmed by
+searching the ERC-4337 EntryPoint's (`0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789`)
+`UserOperationEvent` logs directly for that exact userOp hash and
+finding the *real* settlement transaction:
+`0x519a8d071eaeda078075af1c8aa9ffa88c1646165c03690c6820608b5f2c9c72`
+(`status: 0x1`, a genuine USDC `Transfer` of `10000` atomic units — the
+exact quoted amount — to the exact quoted `payTo`). The user's payment
+had genuinely settled; `verifyPayment()`'s `getTransactionReceipt` call
+(`src/server/payment.ts`) just could never find it, since it was never
+given the real hash to look up. This never consumed the quote's
+`resourceId` (the receipt lookup throws before `consumeQuote()` runs),
+so no `resourceId` was burned by the failed attempts — only whatever
+the eventual page reload/retry does next matters going forward.
+
+**This corrects, not just extends, the 2026-08-12 "Phase 7d" entry
+above.** That investigation was real diligence — it read `pay.js`,
+`sdkManager.js`, and `sendUserOpAndWait.js` directly rather than trusting
+`getPaymentStatus`'s own JSDoc (which already called the id a "userOp
+hash"), cross-checked `TOKENS.USDC.addresses.base` against the live
+quote's `asset`, and concluded the returned `id` was a real settlement
+hash "named and commented as a real transaction hash throughout the
+call chain, not the userOp identifier." That conclusion was **wrong in
+practice**, and reading the exact same source again today shows why:
+`sdkManager.js`'s `transactionHash` variable is populated directly from
+whatever `wallet_sendCalls` (EIP-5792) returns as its call-bundle `id`
+— the variable name is the library's own naming, not a guarantee about
+what that value actually is for every wallet type. For a plain EOA it
+may well be a real tx hash; for an ERC-4337 smart wallet, empirically,
+it's the userOp hash. **The original verification traced variable names
+through source code but was never run against a real payment through an
+actual smart wallet and checked against a block explorer** — exactly
+the gap a live user's first real attempt today exposed. Recorded here
+plainly, the same way the Vercel "resolved, then actually wasn't"
+correction earlier this week was: catching your own wrong prior
+conclusion and saying so is the standard here, not something to smooth
+over.
+
+**Fix**: `resolveUserOpTransactionHash()` (new, `web/src/lib/vouch402.ts`)
+calls the exact same bundler endpoint `getPaymentStatus()` already talks
+to internally (`eth_getUserOperationReceipt`, Coinbase's
+`chain-proxy.wallet.coinbase.com` bundler — same `DEFAULT_BUNDLER_URLS`/
+`DEFAULT_BUNDLER_HEADERS` `@base-org/account` uses, duplicated here since
+the package doesn't export them) and extracts `result.receipt.transactionHash`
+— a real field the bundler returns that `getPaymentStatus`'s own typed
+return value drops entirely. `use-risk-score-demo.ts` now resolves this
+real hash right after `getPaymentStatus()` reports `"completed"`, and
+uses *that* for both the `X-PAYMENT` proof and the Basescan explorer
+link — not `payment.id`. `try-it.tsx`'s "confirming" phase (before the
+real hash is known) no longer links to Basescan with the userOp id,
+which would 404 the same way.
+
+**Verified**: the fix function tested directly against the user's real
+failed payment's actual userOp hash — resolves to the exact real
+transaction hash found via the manual EntryPoint-log search above,
+confirmed byte-for-byte. `npx tsc --noEmit` and `npm run build` (web/)
+both clean.
+
+**A real gap in `@base-org/account`'s own public API, worth reporting
+upstream separately** (not filed yet): `getPaymentStatus()` fetches the
+full `eth_getUserOperationReceipt` response internally — it already has
+`receipt.transactionHash` in hand to parse the USDC transfer logs — but
+its typed `PaymentStatus` return value never exposes that field, forcing
+any caller who needs the real settlement hash (which is exactly what a
+server verifying payment by transaction receipt needs) to either
+duplicate the bundler call themselves, as this fix does, or use
+`payment.id` and quietly get the wrong value like this project did for
+almost a month.
