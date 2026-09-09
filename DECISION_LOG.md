@@ -3791,3 +3791,22 @@ or a truly fresh wallet; only adds resilience against a transient one.
 real Base Sepolia) passes clean. Deployed to production
 (`fly deploy --app vouch402`) before the second mainnet payment requested
 in the entry above, so that payment gets the corrected signal too.
+
+**Both requested mainnet payments completed and verified, closing out
+this whole incident**: the RPC rate-limit fix and the Blockscout retry
+fix now both confirmed live against real production traffic, not just
+tests.
+- Payment 1 (before this Blockscout fix deployed): attestation
+  `0x468cb4a8caab16bb381ad8aaa6035068eca89922b9c89554c43debed685f2f20`,
+  `score: 70`, `walletAgeDays: 0, uniqueContractInteractions: 0` — hit
+  the exact Blockscout blip this entry documents, real and permanent on
+  EAS (not retroactively correctable, and shouldn't be — it's an honest
+  record of what the API actually returned at that moment).
+- Payment 2 (after this fix deployed): attestation
+  `0xe09e4207eea9fabb0b5be8e10efee91c1c0894cff0e864c57d4cbdd5793b27cd`,
+  `score: 52`, `walletAgeDays: 27, uniqueContractInteractions: 3` — the
+  correct, real values for this wallet. Both independently re-verified
+  via EAS's own GraphQL API and confirmed present on `/v1/activity`.
+  Neither hit any internal error or rate-limit failure — the RPC fix
+  from the previous entry held under two more real, back-to-back
+  mainnet payments.
