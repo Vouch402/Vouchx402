@@ -1,6 +1,6 @@
 {
   "name": "vouch402-sdk",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "TypeScript client for Vouch402: x402-metered on-chain risk scores for Base addresses, with EAS fulfillment attestations.",
   "type": "module",
   "main": "./dist/index.js",
@@ -21,7 +21,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Eras256/Vouchx402.git",
+    "url": "https://github.com/Vouch402/Vouchx402.git",
     "directory": "sdk"
   },
   "peerDependencies": {

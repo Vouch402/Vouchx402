@@ -31,7 +31,7 @@ function errorResult(message: string) {
   return { content: [{ type: "text" as const, text: message }], isError: true };
 }
 
-const server = new McpServer({ name: "vouch402", version: "0.3.0" });
+const server = new McpServer({ name: "vouch402", version: "0.3.1" });
 
 server.registerTool(
   "get_payment_quote",
