@@ -3890,3 +3890,19 @@ server verifying payment by transaction receipt needs) to either
 duplicate the bundler call themselves, as this fix does, or use
 `payment.id` and quietly get the wrong value like this project did for
 almost a month.
+
+**Verified live in production, by the user's own real payment, not just
+a code read or a resolved-in-isolation function test**: pushed
+(`2875967`), Vercel auto-deployed, and the user immediately retried the
+same "Try It" payment for real. It completed cleanly this time --
+"Pago confirmado", `score: 52/100`, `walletAgeDays: 27`,
+`uniqueContractInteractions: 3`, attestation
+`0xa08022d6ef35ed99cad647fd54dfb6ca9a97f0900fe5d55065d1303dfde4b404`.
+Independently re-verified from here, not taken from the UI alone: the
+attestation's own `x402PaymentRef` field decodes to
+`0x6ee3daf97d5b66cb04a624c95c93dd2d2cefe658144f34bf384448c685070907`,
+which resolves via plain `eth_getTransactionReceipt` (`status: 0x1`,
+`to` the ERC-4337 EntryPoint) -- a real, independently-resolvable
+transaction hash this time, not a userOp hash. The Blockscout retry fix
+from earlier this same day held too (27 days, 3 contracts, correct on
+the first real request after deploy, no retry needed to observe).
