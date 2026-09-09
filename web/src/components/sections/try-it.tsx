@@ -147,10 +147,20 @@ function DemoStatus({
     return <StatusPanel>{t("phase.awaitingPayment", { amount: phase.amount, payTo: truncateHex(phase.payTo) })}</StatusPanel>;
   }
 
-  if (phase.status === "confirming" || phase.status === "fulfilling") {
+  if (phase.status === "confirming") {
+    // phase.txHash here is still the wallet's own userOp/call-bundle id
+    // (payment.id in use-risk-score-demo.ts), not yet the real settlement
+    // transaction -- that only exists once getPaymentStatus() reports
+    // "completed" and resolveUserOpTransactionHash() runs. Basescan can't
+    // resolve a userOp id, so no explorer link here; see DECISION_LOG.md,
+    // 2026-09-09.
+    return <StatusPanel>{t("phase.confirming")}</StatusPanel>;
+  }
+
+  if (phase.status === "fulfilling") {
     return (
       <StatusPanel>
-        {t(phase.status === "confirming" ? "phase.confirming" : "phase.fulfilling")}
+        {t("phase.fulfilling")}
         <a
           href={basescanTxUrl(apiNetwork, phase.txHash)}
           target="_blank"

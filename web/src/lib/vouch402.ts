@@ -194,3 +194,55 @@ export async function fetchRiskScoreWithProof(
   // TypeScript's control-flow analysis happy.
   throw new Error("Exhausted retries confirming payment");
 }
+
+// Same default bundler endpoints @base-org/account's own getPaymentStatus()
+// uses internally (DEFAULT_BUNDLER_URLS/DEFAULT_BUNDLER_HEADERS in its
+// interface/payment/constants.js) -- duplicated here rather than imported
+// since the package doesn't export them.
+const BUNDLER_URL: Record<ApiNetwork, string> = {
+  base: "https://chain-proxy.wallet.coinbase.com?targetName=base",
+  "base-sepolia": "https://chain-proxy.wallet.coinbase.com?targetName=base-sepolia",
+};
+const BUNDLER_HEADERS = {
+  "content-type": "application/json",
+  "x-tpp-client-project-name": "base-pay-sdk",
+  "x-tpp-client-feature-name": "payment-status",
+};
+
+/**
+ * `pay()`'s returned `id` is what `wallet_sendCalls` (EIP-5792) hands
+ * back as its call-bundle id -- for a passkey-based Coinbase Smart
+ * Wallet (the "keys.coinbase.com" popup, an ERC-4337 account) this is
+ * the *userOp hash*, not a real L1 transaction hash, even though
+ * @base-org/account's own `pay.js` names the variable holding it
+ * `transactionHash` throughout its call chain. Confirmed live, not
+ * inferred: a real Try It payment's `payment.id` didn't resolve via
+ * `eth_getTransactionReceipt` at all, but matched the `userOpHash` topic
+ * on a real `UserOperationEvent` log from the ERC-4337 EntryPoint
+ * (`0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789`) -- see DECISION_LOG.md.
+ *
+ * `@base-org/account`'s own `getPaymentStatus()` already resolves the
+ * real settlement transaction via the bundler's `eth_getUserOperationReceipt`
+ * internally (it needs the receipt's logs to parse the USDC transfer
+ * amount) but never surfaces `receipt.transactionHash` on its typed
+ * return value -- a real gap in that package's public API. This calls
+ * the exact same bundler endpoint directly to recover the one field that
+ * gap drops, so Vouch402's own `verifyPayment()` (which only ever
+ * accepts a real transaction hash, by design -- see src/server/payment.ts)
+ * gets something it can actually resolve.
+ */
+export async function resolveUserOpTransactionHash(userOpHash: string, network: ApiNetwork): Promise<string> {
+  const res = await fetch(BUNDLER_URL[network], {
+    method: "POST",
+    headers: BUNDLER_HEADERS,
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getUserOperationReceipt", params: [userOpHash] }),
+  });
+  const body = (await res.json()) as { result?: { receipt?: { transactionHash?: string } }; error?: { message?: string } };
+  const txHash = body.result?.receipt?.transactionHash;
+  if (!txHash) {
+    throw new Error(
+      body.error?.message ?? "Could not resolve the real settlement transaction hash for this payment yet; retry shortly."
+    );
+  }
+  return txHash;
+}
