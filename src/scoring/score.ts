@@ -47,8 +47,19 @@ interface ExplorerTx {
  * `account txlist` shape (sorted ascending, so `[0]` is the earliest
  * tx). Plain JSON-RPC has no "first tx" query, which is why an explorer
  * API is needed for that specific signal. No API key required. Returns
- * [] if the request fails, rate-limits, or the address has no history
- * (fresh wallet): a degraded signal, never a hard error.
+ * [] if every retry still fails, rate-limits, or the address genuinely
+ * has no history (fresh wallet): a degraded signal, never a hard error —
+ * that design choice is deliberate and unchanged.
+ *
+ * The retries are new (2026-09-09): confirmed live that Blockscout's
+ * `txlist` endpoint is transiently flaky on this exact call, not just
+ * theoretically — a real request against the team's own dev wallet
+ * (37 real transactions, 27 days old) came back `{"message":"Something
+ * went wrong.","status":"0"}` on one attempt and succeeded normally on
+ * the next two, seconds apart. Before this fix, that single blip silently
+ * produced `walletAgeDays: 0, uniqueContractInteractions: 0` — a wallet
+ * with real history reading as brand-new — with nothing to distinguish
+ * it from a genuinely fresh address. See DECISION_LOG.md.
  */
 async function fetchTxHistory(network: NetworkName, address: string, max = 200): Promise<ExplorerTx[]> {
   const url = new URL(blockscoutApiBaseFor(network));
@@ -61,11 +72,20 @@ async function fetchTxHistory(network: NetworkName, address: string, max = 200):
   url.searchParams.set("offset", String(max));
   url.searchParams.set("sort", "asc");
 
-  const res = await fetch(url.toString());
-  if (!res.ok) return [];
-  const body = (await res.json()) as { status: string; result: ExplorerTx[] | string };
-  if (body.status !== "1" || !Array.isArray(body.result)) return [];
-  return body.result;
+  const retries = 3;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetch(url.toString());
+      if (res.ok) {
+        const body = (await res.json()) as { status: string; result: ExplorerTx[] | string };
+        if (body.status === "1" && Array.isArray(body.result)) return body.result;
+      }
+    } catch {
+      // network-level failure (fetch itself threw): fall through to retry.
+    }
+    if (attempt >= retries) return [];
+    await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+  }
 }
 
 function isFlagged(address: string): boolean {
