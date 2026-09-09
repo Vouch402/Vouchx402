@@ -6,6 +6,8 @@ with a built-in proof-of-fulfillment attestation layer (x402-SAP).
 Live: **https://www.vouch402.xyz** (Docs, the Try It demo, and the live
 activity feed) — direct API: **https://vouch402.fly.dev** (Base mainnet)
 
+New here? See [REVIEWERS.md](REVIEWERS.md) for a 3-minute verification guide.
+
 See [docs/TECHNICAL_SPEC.md](docs/TECHNICAL_SPEC.md) for the full spec.
 Also available as a Base MCP plugin (or will be, once the upstream
 `base/skills` PR lands): see [`plugins/vouch402.md`](plugins/vouch402.md).
