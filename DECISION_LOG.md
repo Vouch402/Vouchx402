@@ -4061,3 +4061,58 @@ Both drafted with real line references and a working reproduction (for
 outward-facing-action standard as any `git push`/`npm publish`. Neither
 has a fix PR yet; that's the natural next step if either maintainer
 confirms interest, not assumed.
+
+## 2026-09-11: Opened fix PRs for both filed ecosystem issues —
+`viem#5083`, `account-sdk#406`
+
+Same day as the two issues above; both maintainers hadn't responded
+yet, but the fixes were small, well-scoped, and matched an existing
+accepted pattern in each repo (viem's own PR #4424 for the sibling
+`429` case), so drafted diffs were reviewed and explicitly approved
+here before either PR was opened — same standard as filing the issues
+themselves, and as any other outward-facing action in this project.
+
+**`wevm/viem` — PR #5083, closes #5082.** Forked `wevm/viem`, added
+`if (error.code === -32007) return true` to `shouldRetry` right after
+the existing `429` case, plus a unit test matching the sibling `429`
+test's exact style, plus a changeset. Could not run the real test
+suite: it needs a Foundry/Anvil toolchain and `VITE_ANVIL_FORK_URL`
+secrets this sandbox doesn't have (`pnpm contracts:build` fails on a
+missing `contracts/generated.js` without Foundry) — the same gap
+already documented for the `foundry-rs/foundry#16219` verification.
+Rather than skip verification, extracted the exact patched function
+body into an isolated script with stub `LimitExceededRpcError`/
+`InternalRpcError`/`HttpRequestError`, and ran it against six cases
+(the new `-32007` case, the three already-passing retryable codes, and
+two codes that must *not* retry) — all six passed. PR body states this
+limitation explicitly rather than implying the official suite ran.
+
+**`base/account-sdk` — PR #406, closes #405.** Forked `account-sdk`,
+added a `getReceiptTransactionHash` helper (matching the file's own
+defensive-parsing style) and wired it into both the `completed` and
+`failed` result branches, added `transactionHash?: Hex` to
+`PaymentStatus`, and updated the three existing
+`toEqual<PaymentStatus>` test assertions that needed it (their fixtures
+already contained `receipt.transactionHash` — it just wasn't asserted)
+plus one new test for the field being absent. This one *could* be
+fully verified: `yarn vitest run` on the affected test file passed
+47/47. `yarn typecheck` was also run and failed on a pre-existing,
+unrelated `Cannot find module './Dialog-css.js'` — confirmed via
+`git stash` that the identical error exists on a clean `master`
+checkout too, so not something this change caused or could fix.
+
+**Real finding, not assumed:** this repo's `CONTRIBUTING.md` requires
+all commits to be GPG-signed. This sandbox has no GPG key, but does
+have an SSH signing key (`~/.ssh/id_ed25519_signing`) already
+registered on the user's GitHub account. Configured
+`gpg.format=ssh`/`user.signingkey` locally (scoped to this one clone,
+not global), committed with `-S`, pushed, then verified — not assumed
+— via `gh api repos/Eras256/account-sdk/commits/<sha>`, which returned
+`"verified": true, "reason": "valid"`. GitHub accepted the SSH
+signature as `Verified` without needing GPG at all.
+
+Both PRs are **open, pending review, not merged** — README's
+"Ecosystem contributions" section and the pitch deck's Ecosystem slide
+were updated to say exactly that, matching the same care already taken
+with the Base Batches "decision pending" framing. Will be revisited if
+either merges, gets review comments, or is closed.

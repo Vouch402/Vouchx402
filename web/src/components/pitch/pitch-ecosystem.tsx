@@ -22,6 +22,16 @@ const CONTRIBUTIONS = [
     url: "https://github.com/foundry-rs/foundry/issues/16209",
     kind: "docs" as const,
   },
+  {
+    key: "viemRateLimit",
+    url: "https://github.com/wevm/viem/pull/5083",
+    kind: "openPr" as const,
+  },
+  {
+    key: "accountSdkTxHash",
+    url: "https://github.com/base/account-sdk/pull/406",
+    kind: "openPr" as const,
+  },
 ] as const;
 
 const PACKAGES = [

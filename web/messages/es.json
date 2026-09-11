@@ -238,9 +238,10 @@
       },
       "contributions": {
         "title": "Encontrado y reportado upstream",
-        "subtitle": "Dos hallazgos reales en dependencias que este proyecto realmente usa, ambos públicos y verificables de forma independiente. No son del mismo tipo: uno es un hallazgo de seguridad, el otro un bug de documentación/UX.",
+        "subtitle": "Cuatro hallazgos reales en dependencias que este proyecto realmente usa, todos públicos y verificables de forma independiente — dos ya arreglados y publicados upstream, dos más con PR de fix abierto y en revisión, sin mergear todavía.",
         "securityLabel": "Hallazgo de seguridad",
         "docsLabel": "Bug de docs/UX",
+        "openPrLabel": "PR abierto — en revisión",
         "easSdk": {
           "link": "eas-sdk#132",
           "description": "Los helpers de eas-sdk que parsean el receipt hacen match de los event logs solo por firma, no por qué contrato los emitió, así que el resolver de un schema puede inyectar un UID falso en el resultado de multiAttest(). Vouch402 mismo no está expuesto: sin resolver, sin llamadas a multiAttest(). Cerrado como completado por el maintainer, arreglado y publicado como eas-sdk 2.10.0 — una migración real para quien use las funciones movidas. Se revisó primero: este código solo importa EAS, SchemaRegistry, SchemaEncoder y las constantes ZERO_*, nunca los helpers movidos ni EIP712Proxy, así que el bump fue no-op — verificado con un build limpio después de actualizar, no solo leyendo el diff."
@@ -248,6 +249,14 @@
         "foundry": {
           "link": "foundry-rs/foundry#16209",
           "description": "cast wallet new <name> falla con un nombre de cuenta a secas, a diferencia de cast wallet import <name>, que guarda en el directorio de keystores por defecto de la misma forma. El issue que rastreaba exactamente este hueco se había cerrado como completado contra un fix que no lo cubría. La propia documentación del CLI de este proyecto tenía el comando roto documentado y también hubo que arreglarla. Se abrió un fix (foundry-rs/foundry#16219); la revisión encontró un caso real de Windows (los dos puntos en el nombre son sintaxis de alternate-data-stream) antes de mergear. Se compiló esa rama y se repitió el repro original para confirmarlo. Sigue abierto, a la espera de nueva aprobación de maintainers y de un CI bloqueado por ser PR de fork."
+        },
+        "viemRateLimit": {
+          "link": "viem#5083",
+          "description": "El shouldRetry de viem no reintenta el código de rate-limit propio de QuickNode, -32007, así que un retryCount configurado se ignora en silencio para esa falla específica — el error exacto detrás del incidente de rate-limit de RPC que este proyecto ya vivió. Reportado como viem#5082, y luego se abrió viem#5083 con el fix (calcado del manejo que viem ya tenía para el caso 429 de Alchemy) más un test unitario. No se pudo correr la suite completa de tests de viem en este entorno (necesita Foundry/Anvil), así que la lógica del parche se verificó de forma aislada antes. Abierto, en espera de revisión, no mergeado."
+        },
+        "accountSdkTxHash": {
+          "link": "account-sdk#406",
+          "description": "getPaymentStatus() de @base-org/account ya obtiene internamente el hash real de la transacción para parsear los logs de transferencia de USDC, pero nunca lo devuelve — solo el hash de la userOp, que no resuelve en un explorador de bloques. Este es exactamente el hueco detrás del bug de Base Pay de este proyecto. Reportado como account-sdk#405, y luego se abrió account-sdk#406 agregando transactionHash a PaymentStatus. Los 47 tests existentes del archivo más uno nuevo pasan. Abierto, en espera de revisión, no mergeado."
         }
       },
       "packages": {
