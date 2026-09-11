@@ -75,6 +75,10 @@ export function PitchLinks() {
         ))}
       </div>
 
+      <div className="mt-6 rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground sm:p-5">
+        {t("team.busFactor")}
+      </div>
+
       <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm">
         <Link href="/docs" className="inline-flex items-center gap-1 text-primary hover:underline">
           {t("docs")}
