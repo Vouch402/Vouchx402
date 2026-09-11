@@ -78,6 +78,14 @@ assuming what's live on npm.
   output (`git rev-list`, `gh api`, a registry read), not just the
   command's own success message — same standard as "Committed is not
   live" above, applied to actions outside this repo too.
+- **`Co-Authored-By: Claude...` goes on every commit with AI assistance,
+  regardless of whose identity signs it.** Who authored a commit (which
+  team member's name/email) and whether AI assisted it are two separate
+  facts; neither gets hidden to make the other look cleaner. This
+  applies the same way to a commit under a team member's own real
+  identity (e.g. Monse's) as to one under the primary account this
+  environment runs as — see `DECISION_LOG.md`, 2026-09-11, for the case
+  that prompted writing this down explicitly.
 - **No raw private keys anywhere.** Every signer path decrypts a standard
   Foundry keystore (`cast wallet import`/`new`) via
   `ethers.Wallet.fromEncryptedJsonSync`; see `src/lib/keystore.ts` and

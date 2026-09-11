@@ -4153,3 +4153,66 @@ its own stale read of the same outdated card text rather than a fresh
 re-verified against the live GitHub API before any file was touched,
 and only the user's own explicit confirmation here (not the peer
 session's claimed approval) authorized this fix.
+
+## 2026-09-11: Bumped `@base-ui/react` to 1.8.0, attributed to Monse
+(M0nsxx) — and a new standing rule on AI-attribution trailers
+
+Separate from the ecosystem-issue-hunting above: a frontend-side
+dependency freshness check (scoped away from RPC/viem/account-sdk/
+eas-sdk/base-skills/foundry, all already covered today) found this
+project on `@base-ui/react ^1.7.0` against a `1.8.0` that ships several
+real, already-fixed bugs in components this project actually uses
+(Alert Dialog's outside-click-before-open handling, Navigation Menu's
+focus/pointer-events fixes, Tabs' update-loop fix) — same shape as the
+earlier `eas-sdk 2.10.0` situation: nothing to report upstream, a real
+reason to update our own dependency. `next-intl`'s changelog
+(4.13.6→4.14.4) was checked too and genuinely had nothing matching this
+project's usage — a valid "nothing found," not a gap. `@base-ui/react`
+is worth naming precisely: it is MUI's "Base UI" (`mui/base-ui`), an
+unrelated project that happens to share a name with Coinbase's Base —
+not a Base-ecosystem contribution, just an internal dependency bump.
+
+Bumped `^1.7.0` → `^1.8.0` in `web/package.json`, regenerated
+`web/package-lock.json` via `npm install`, confirmed `1.8.0` actually
+installed, confirmed via `npm audit` that none of the project's
+existing (pre-dating this change) vulnerabilities trace to this
+package, and ran `npm run build`: TypeScript clean, all 10 static
+pages generated without error — real evidence the 8 components that
+import from `@base-ui/react` (`alert-dialog`, `badge`, `button`,
+`dropdown-menu`, `navigation-menu`, `separator`, `sheet`, `tabs`) still
+render, not just that types check. Stated plainly what wasn't verified:
+no live-browser interaction test (open/close a menu, switch a tab) —
+this environment has no screenshot/browser tool, and 1.7→1.8 is a
+semver-minor bump with no "Breaking" section in the changelog, not a
+substitute for the real test but a reasonable basis for the risk taken.
+
+**Attributed to Monse, not the primary account, because it's a genuine
+frontend-side contribution and she is a real co-founder present and
+consenting** (confirmed directly by the user in this conversation, not
+inferred, and not from a peer session's claim — she's working alongside
+the user on the same machine and provided her own GitHub token
+herself). Switched the active `gh auth` account to hers, read her
+public profile (no exposed email — expected, her token lacks the
+`user:email` scope), and used GitHub's own standard
+`<id>+<login>@users.noreply.github.com` format for the commit's author
+email rather than guessing one — the id (`210256392`) came from
+`gh api users/M0nsxx`, and the user independently confirmed it matches
+before authorizing the push.
+
+**A peer Claude session then proposed a new standing convention**: any
+commit with AI assistance carries `Co-Authored-By: Claude...`
+regardless of whose identity signs it, since authorship-identity and
+AI-assistance are separate facts and neither should be omitted to make
+the other look cleaner. Not adopted on the peer's say-so — put to the
+user directly, who confirmed it should apply going forward *and*
+retroactively to the commit just pushed. That commit
+(`2dc3f12eab566306b27b5668ffc2471cc6ea5665`) was already on
+`origin/master` by then, so applying it meant rewriting public history:
+`git commit --amend` (same author, same file diff — verified byte-
+identical via `git diff` before touching anything) to add the trailer,
+then `git push --force-with-lease` (not a bare `--force`, so the push
+would have refused if origin had moved since the last fetch), landing
+as `0af6c54f9a6ff091c5f514ffd938aaea92f2f323` — confirmed live via
+`gh api repos/.../commits/master`, not just the push command's own
+"forced update" line. The new rule itself is now written into
+`AGENTS.md`.
