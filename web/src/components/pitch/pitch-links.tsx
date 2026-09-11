@@ -7,8 +7,19 @@ import Link from "next/link";
 import { PitchSlide } from "./pitch-slide";
 
 const TEAM = [
-  { key: "eras256", avatar: "/team/eras256.webp", github: "https://github.com/Eras256" },
-  { key: "monsxx", avatar: "/team/m0nsxx.webp", github: "https://github.com/M0nsxx" },
+  {
+    key: "eras256",
+    avatar: "/team/eras256.webp",
+    links: [{ label: "github.com/Eras256", href: "https://github.com/Eras256" }],
+  },
+  {
+    key: "monsxx",
+    avatar: "/team/m0nsxx.webp",
+    links: [
+      { label: "github.com/M0nsxx", href: "https://github.com/M0nsxx" },
+      { label: "@smithserrat", href: "https://x.com/smithserrat" },
+    ],
+  },
 ] as const;
 
 export function PitchLinks() {
@@ -33,13 +44,7 @@ export function PitchLinks() {
       <h3 className="mt-10 font-medium">{t("team.title")}</h3>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {TEAM.map((member) => (
-          <a
-            key={member.key}
-            href={member.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-4 rounded-xl border border-border bg-muted/50 p-4 transition-colors hover:border-primary/40 sm:p-5"
-          >
+          <div key={member.key} className="flex items-start gap-4 rounded-xl border border-border bg-muted/50 p-4 sm:p-5">
             <Image
               src={member.avatar}
               alt={t(`team.${member.key}.name`)}
@@ -48,16 +53,25 @@ export function PitchLinks() {
               className="size-14 shrink-0 rounded-full object-cover"
             />
             <div className="min-w-0">
-              <span className="flex items-center gap-1 text-sm font-medium text-foreground">
-                {t(`team.${member.key}.name`)}
-                <ArrowUpRight
-                  className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
-                  aria-hidden="true"
-                />
-              </span>
+              <p className="text-sm font-medium text-foreground">{t(`team.${member.key}.name`)}</p>
               <p className="mt-1 text-sm text-muted-foreground">{t(`team.${member.key}.role`)}</p>
+              <p className="mt-2 flex flex-wrap gap-x-1.5 text-xs">
+                {member.links.map((link, i) => (
+                  <span key={link.href} className="flex items-center gap-1.5">
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="data text-primary hover:underline"
+                    >
+                      {link.label}
+                    </a>
+                    {i < member.links.length - 1 && <span className="text-muted-foreground">·</span>}
+                  </span>
+                ))}
+              </p>
             </div>
-          </a>
+          </div>
         ))}
       </div>
 
