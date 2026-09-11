@@ -143,6 +143,25 @@ maintainer approvals (GitHub does this automatically on push), so it's
 waiting on fresh re-approval plus a CI run still gated behind fork-PR
 workflow approval — nothing left in it Vouch402 can act on.
 
+Separately, two more findings from the same practice, both against
+dependencies this project's own recent incidents traced back to. In
+`wevm/viem`, `shouldRetry` doesn't retry QuickNode's own `-32007`
+rate-limit code, so a configured `retryCount` is silently ignored for
+that specific failure — the exact error behind this project's own RPC
+rate-limit incident (see `DECISION_LOG.md`). Filed as
+[viem#5082](https://github.com/wevm/viem/issues/5082); opened
+[viem#5083](https://github.com/wevm/viem/pull/5083) with the fix
+(mirroring viem's own existing handling of Alchemy's `429` case) plus a
+unit test. In `@base-org/account`, `getPaymentStatus()` already fetches
+the real settlement transaction hash internally to parse USDC transfer
+logs, but never returns it — only the userOp hash, which doesn't
+resolve on a block explorer. This is the exact gap behind this
+project's own Base Pay bug (see `DECISION_LOG.md`). Filed as
+[account-sdk#405](https://github.com/base/account-sdk/issues/405);
+opened [account-sdk#406](https://github.com/base/account-sdk/pull/406)
+adding `transactionHash` to `PaymentStatus`. **Both PRs are open and
+awaiting review, not merged.**
+
 ## How it works
 
 ```
