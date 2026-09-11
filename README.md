@@ -233,6 +233,13 @@ a separate address from the deployer/signer wallet on purpose. See
 fly deploy --app vouch402
 ```
 
+## Program participation
+
+Vouch402 is currently under active review for **Base Batches**, decision
+still pending — not claimed as an award here. Separately, the founding
+team holds a real, currently active **Based Developer Ambassador** role
+in Base's own Discord, not an application in progress.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
