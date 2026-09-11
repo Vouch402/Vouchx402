@@ -4116,3 +4116,40 @@ Both PRs are **open, pending review, not merged** — README's
 were updated to say exactly that, matching the same care already taken
 with the Base Batches "decision pending" framing. Will be revisited if
 either merges, gets review comments, or is closed.
+
+## 2026-09-11: Correction — the foundry-rs/foundry#16219 card in README
+and the pitch deck was stale, said "still open" for a PR merged two
+days earlier
+
+Caught while re-verifying the "two fixed, two open" ecosystem-findings
+count above: `foundry-rs/foundry#16219` actually shows
+`state: MERGED`, `mergedAt: 2026-09-09T08:30:16Z`, `mergedBy: mablr`
+(confirmed live via `gh pr view 16219 --repo foundry-rs/foundry`), but
+this project's own README and pitch deck (both languages) still said
+"Still open, awaiting fresh maintainer re-approval and a fork-gated CI
+run" — true as of 2026-08-27 when that text was written, wrong for the
+twelve days since, including all of today's own work on the
+viem/account-sdk findings above, which never re-checked it.
+
+Not caught by re-reading our own copy — caught by re-verifying the
+live state of every referenced issue/PR from scratch before touching
+the summary count, the same discipline this project already applies
+to "committed is not live." Fixed to state the real merge, credited to
+the actual merging maintainer, with an honest caveat that Foundry
+ships via rolling `foundryup` builds rather than versioned npm-style
+releases, so "merged into master" is the accurate claim — not
+"released," which would overstate it the way eas-sdk's real
+2.10.0 release doesn't. The overall "two already fixed and released
+upstream, two more open" summary line turned out not to need changing:
+eas-sdk (released) + foundry (now correctly described as merged) are
+the two "done" ones, viem + account-sdk the two still open — the count
+was accidentally already right despite the stale individual card.
+
+Worth naming plainly: a peer Claude session (cross-session message,
+not this project's real user) proposed a *different*, incorrect fix
+first — recount the summary down to "one fixed, three open" — based on
+its own stale read of the same outdated card text rather than a fresh
+`gh` check. That proposal was not applied; it was independently
+re-verified against the live GitHub API before any file was touched,
+and only the user's own explicit confirmation here (not the peer
+session's claimed approval) authorized this fix.

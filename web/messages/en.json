@@ -248,7 +248,7 @@
         },
         "foundry": {
           "link": "foundry-rs/foundry#16209",
-          "description": "cast wallet new <name> fails with a bare account name, unlike cast wallet import <name>, which saves to the default keystore directory the same way. The tracking issue for this exact gap had been closed as completed against a fix that didn't cover it. This project's own CLI docs had documented the broken command and needed fixing too. A fix was opened (foundry-rs/foundry#16219); review caught a real Windows edge case (a colon in the name is alternate-data-stream syntax) before merge. Built that branch and re-ran the original repro to confirm it holds. Still open, awaiting fresh maintainer re-approval and a fork-gated CI run."
+          "description": "cast wallet new <name> fails with a bare account name, unlike cast wallet import <name>, which saves to the default keystore directory the same way. The tracking issue for this exact gap had been closed as completed against a fix that didn't cover it. This project's own CLI docs had documented the broken command and needed fixing too. A fix was opened (foundry-rs/foundry#16219); review caught a real Windows edge case (a colon in the name is alternate-data-stream syntax) before merge. Built that branch and re-ran the original repro to confirm it holds. Merged into master by maintainer mablr on 2026-09-09 — not yet in a tagged/nightly foundryup release, but fixed upstream, not just proposed."
         },
         "viemRateLimit": {
           "link": "viem#5083",

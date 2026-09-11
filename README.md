@@ -137,11 +137,10 @@ figtracer — a bare name containing `:` (`foo:bar`), which on Windows is
 alternate-data-stream syntax and could silently write the keystore into
 a hidden stream, losing the key. Built the fix branch and re-ran the
 original repro to confirm it holds — see `DECISION_LOG.md`, "built the
-fix branch and re-ran the original `cast wallet new` repro." As of
-2026-08-27 the PR is open and unmerged: new commits reset the two prior
-maintainer approvals (GitHub does this automatically on push), so it's
-waiting on fresh re-approval plus a CI run still gated behind fork-PR
-workflow approval — nothing left in it Vouch402 can act on.
+fix branch and re-ran the original `cast wallet new` repro." **Merged
+into `master` by maintainer mablr on 2026-09-09** — not yet in a
+tagged/nightly `foundryup` release, but fixed upstream, not just
+proposed.
 
 Separately, two more findings from the same practice, both against
 dependencies this project's own recent incidents traced back to. In
