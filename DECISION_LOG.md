@@ -4015,3 +4015,49 @@ was an apples-to-oranges comparison, not a real problem).
 today per the user's own explicit call**: no remediation for payment
 2's real, unrecoverable 0.01 USDC loss — trivial in dollar terms, and
 there's no attestation to reconcile it against. Left as-is.
+
+## 2026-09-11: Two more ecosystem findings filed — `viem`'s rate-limit
+retry gap and `@base-org/account`'s missing `transactionHash`
+
+Routine ecosystem audit (see "Ecosystem bug-hunting" in `AGENTS.md`),
+this time specifically re-checking `viem` and `@base-org/account`
+against the two real production incidents this project already lived
+through, rather than a cold read of unfamiliar code.
+
+**`wevm/viem#5082`**: `shouldRetry` in `buildRequest.ts` only retries
+JSON-RPC error codes `-1`, `-32005`, `-32603`, and `429`. QuickNode's
+own rate-limit error — `-32007 "N/second request limit reached"` — is
+the exact error that caused the RPC rate-limit incident documented
+above (2026-09-08/09), fixed there at the `ethers` layer. This project
+also uses `viem`'s `http()` transport (`src/lib/chain.ts`) with a
+widened `retryCount: 6`, on the unverified assumption that a bumped
+retry count alone covered this class of failure. It doesn't: `http()`
+exposes `retryCount`/`retryDelay` but has no way to configure which
+error codes are considered retryable at all — that list is hardcoded
+inside `viem` itself. **Verified by actually reproducing it**, not just
+reading the source: a local mock RPC server that always returns the
+exact `-32007` error was hit with `retryCount: 6` configured, and only
+received **1** request — `viem` gave up on the first attempt regardless
+of the configured count. Also checked for precedent and duplicates
+first: PR #4424 already added the `429` code to this same list for an
+identical Alchemy rate-limit case, so this class of fix has a real track
+record of being accepted upstream; no existing issue covers `-32007`
+specifically.
+
+**`base/account-sdk#405`**: `getPaymentStatus()` reads
+`receipt.result.receipt` (the userOp's transaction receipt, from
+`eth_getUserOperationReceipt`) to parse USDC transfer logs for
+`amount`/`recipient`, but never reads or returns
+`receipt.transactionHash` on that same object — `PaymentStatus` only
+exposes `id` (the userOp hash). This is exactly the gap behind the Base
+Pay userOp-hash bug above (2026-09-09): this project had to write
+`resolveUserOpTransactionHash()` to call Coinbase's bundler directly,
+purely to recover a value the SDK already had in hand and discarded.
+Confirmed directly against the installed package source
+(`@base-org/account@2.5.9`), not from memory of the earlier bug.
+
+Both drafted with real line references and a working reproduction (for
+`viem`), reviewed and explicitly approved before filing — same
+outward-facing-action standard as any `git push`/`npm publish`. Neither
+has a fix PR yet; that's the natural next step if either maintainer
+confirms interest, not assumed.
