@@ -306,7 +306,7 @@
           "name": "Monse (M0nsxx) — Dev Lead",
           "role": "Frontend UX/UI and Backend developer. Ganadora de ETHUruguay 2025."
         },
-        "busFactor": "Bus factor: todo el código en producción de este repositorio específico pasa hoy por un solo fundador (Eras256, 169 commits, verificable en el repositorio público). Monse es la Dev Lead del equipo — programa en otros proyectos del portafolio más amplio y aquí lidera producto, diseño y desarrollo de negocio. Hoy no hay un segundo ingeniero en este repositorio específico — se señala con claridad en vez de dar a entender lo contrario."
+        "busFactor": "Bus factor: la mayoría del código en producción sigue pasando por un solo fundador (Eras256 — cada commit es atribuible a él, verificable en el historial público del repositorio). Monse ya envió dos fixes reales aquí también (validación de dirección en el CLI y el servidor MCP) — un segundo contribuidor es real, solo que todavía no a la par."
       },
       "docs": "Documentación técnica",
       "github": "Código fuente en GitHub",

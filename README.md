@@ -258,12 +258,11 @@ still pending — not claimed as an award here. Separately, the founding
 team holds a real, currently active **Based Developer Ambassador** role
 in Base's own Discord, not an application in progress.
 
-**Bus factor**: all shipped code on this specific repo runs through one
-founder today (Eras256, 169 commits, verifiable in the public repo's
-contributors graph). Monse is the team's Dev Lead — she ships code
-elsewhere in the broader portfolio and leads product, design, and
-business development here. No second engineer on this repo specifically
-today — flagged plainly rather than implied otherwise.
+**Bus factor**: most shipped code still runs through one founder today
+(Eras256 — every commit attributable to him, verifiable in the repo's
+public history). Monse has now shipped two real fixes here too
+(address validation in the CLI and MCP server) — a second contributor
+is real, just not yet at parity.
 
 ## License
 
