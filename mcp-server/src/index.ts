@@ -2,7 +2,16 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { isAddress } from "viem";
 import { getQuote, fetchScore, verifyAttestation, easExplorerUrl, type Network, type X402Requirement } from "vouch402-sdk";
+
+// A plain `z.string()` only checks the type, not that it's a
+// well-formed (and correctly-checksummed) Base address -- a malformed
+// value used to sail past this schema and into a real network/payment
+// call before failing with whatever error the SDK/API happened to
+// throw. `isAddress` also catches an incorrect EIP-55 checksum, which
+// a plain hex-shape regex wouldn't.
+const addressSchema = z.string().refine(isAddress, { message: "must be a valid Base address" });
 
 // This server never holds a wallet or signs anything itself: see
 // DECISION_LOG.md, "Phase 10 open question: how should the standalone
@@ -40,7 +49,7 @@ server.registerTool(
     description:
       "Get the x402 payment requirements for a risk score on a Base address. Returns an unsigned quote: pay maxAmountRequired of the asset token to payTo on the given network yourself, then call fetch_risk_score with the resulting transaction hash. This tool never pays on your behalf.",
     inputSchema: {
-      address: z.string().describe("The Base address to evaluate"),
+      address: addressSchema.describe("The Base address to evaluate"),
       baseUrl: z.string().optional().describe("Override the Vouch402 API base URL (defaults to the live mainnet instance)"),
     },
   },
@@ -64,7 +73,7 @@ server.registerTool(
     description:
       "Complete the flow after paying a quote from get_payment_quote: submits proof of payment, retries until the payment is confirmed server-side, then independently verifies the resulting attestation directly against EAS rather than trusting the API's own response.",
     inputSchema: {
-      address: z.string().describe("The same address passed to get_payment_quote"),
+      address: addressSchema.describe("The same address passed to get_payment_quote"),
       quote: z.object(quoteShape).describe("The exact quote object returned by get_payment_quote"),
       txHash: z.string().describe("The transaction hash of the on-chain payment you submitted"),
       payer: z.string().describe("The address that sent the payment"),

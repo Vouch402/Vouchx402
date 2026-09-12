@@ -52,6 +52,50 @@ describe("vouch402-mcp-server (Base Sepolia, real payments, real MCP client)", (
     expect(tools.map((t) => t.name).sort()).toEqual(["fetch_risk_score", "get_payment_quote"]);
   });
 
+  it("rejects get_payment_quote with a malformed address before any network call", async () => {
+    // Not a real payment flow -- this must fail at the MCP protocol's
+    // own schema-validation layer (an `isError` result carrying an MCP
+    // -32602 "Input validation error"), before get_payment_quote's
+    // handler ever runs and calls the SDK/API. Confirmed empirically:
+    // the SDK's `callTool` resolves with `isError: true` here rather
+    // than rejecting the promise -- schema errors and handler-thrown
+    // errors both surface the same way to a caller.
+    const result = await client.callTool({
+      name: "get_payment_quote",
+      arguments: { address: "not-a-real-address" },
+    });
+    expect(result.isError).toBe(true);
+    const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
+    expect(text).toContain("must be a valid Base address");
+  });
+
+  it("rejects fetch_risk_score with a malformed address before any network call", async () => {
+    const result = await client.callTool({
+      name: "fetch_risk_score",
+      arguments: {
+        address: "not-a-real-address",
+        quote: {
+          scheme: "exact-direct",
+          network: "base-sepolia",
+          maxAmountRequired: "10000",
+          resource: "/v1/risk-score/0x0000000000000000000000000000000000000000",
+          description: "",
+          mimeType: "application/json",
+          payTo: env.payTo,
+          maxTimeoutSeconds: 60,
+          asset: "0x0000000000000000000000000000000000000000",
+          extra: { name: "USDC", resourceId: "0x0" },
+        },
+        txHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+        payer: env.payTo,
+        jurisdictionAttestation: true,
+      },
+    });
+    expect(result.isError).toBe(true);
+    const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
+    expect(text).toContain("must be a valid Base address");
+  });
+
   it("runs quote -> pay -> fetch through real MCP tool calls, server never pays", async () => {
     const { account } = loadDeployerAccount();
     const address = env.payTo;
