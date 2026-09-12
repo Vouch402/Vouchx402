@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { pathToFileURL } from "node:url";
+import { isAddress, type Address } from "viem";
 import { getRiskScore, easExplorerUrl } from "vouch402-sdk";
 import { loadKeystoreAccount } from "./keystore.js";
 
@@ -50,36 +52,82 @@ function parseArgs(argv: string[]): {
   return { address, baseUrl, makePublic, jurisdictionAttestation };
 }
 
-async function main(): Promise<void> {
-  const [command, ...rest] = process.argv.slice(2);
+/**
+ * Everything `main()` needs to decide, with zero side effects — no
+ * `process.exit`, no console output, no keystore/network access. Kept
+ * separate so it's directly unit-testable (see `test/cli.test.ts`),
+ * unlike `main()` itself which reads `process.argv` and terminates the
+ * process.
+ */
+export type ParsedCommand =
+  | { kind: "help"; exitCode: 0 | 1 }
+  | { kind: "error"; message: string; showHelp?: boolean }
+  | {
+      kind: "score";
+      address: Address;
+      baseUrl?: string;
+      makePublic: boolean;
+      jurisdictionAttestation: boolean;
+    };
 
-  if (!command || command === "--help" || command === "-h") {
-    printHelp();
-    process.exit(command ? 0 : 1);
+export function resolveCommand(argv: string[]): ParsedCommand {
+  // Checked first, against the *entire* arg list, not just the command
+  // position -- `vouch402 score --help` used to have `--help` consumed
+  // as the <address> positional instead of printing help.
+  if (argv.includes("--help") || argv.includes("-h")) {
+    return { kind: "help", exitCode: 0 };
+  }
+
+  const [command, ...rest] = argv;
+  if (!command) {
+    return { kind: "help", exitCode: 1 };
   }
 
   if (command !== "score") {
-    console.error(`Unknown command: ${command}\n`);
-    printHelp();
-    process.exit(1);
+    return { kind: "error", message: `Unknown command: ${command}`, showHelp: true };
   }
 
   const { address, baseUrl, makePublic, jurisdictionAttestation } = parseArgs(["score", ...rest]);
   if (!address) {
-    console.error("Usage: vouch402 score <address> --attest-jurisdiction\n");
-    process.exit(1);
+    return { kind: "error", message: "Usage: vouch402 score <address> --attest-jurisdiction" };
+  }
+  // Checked before anything that costs money: a typo'd address should
+  // fail instantly here, not after paying for a real x402 request.
+  if (!isAddress(address)) {
+    return { kind: "error", message: `Invalid address: ${address}` };
   }
   if (!jurisdictionAttestation) {
-    console.error(
-      "Missing required --attest-jurisdiction flag. Run with --help for what it certifies and why it's required; the API rejects the request outright without it.\n"
-    );
+    return {
+      kind: "error",
+      message:
+        "Missing required --attest-jurisdiction flag. Run with --help for what it certifies and why it's required; the API rejects the request outright without it.",
+    };
+  }
+
+  return { kind: "score", address, baseUrl, makePublic, jurisdictionAttestation };
+}
+
+async function main(): Promise<void> {
+  const parsed = resolveCommand(process.argv.slice(2));
+
+  if (parsed.kind === "help") {
+    printHelp();
+    process.exit(parsed.exitCode);
+  }
+  if (parsed.kind === "error") {
+    console.error(`${parsed.message}\n`);
+    if (parsed.showHelp) printHelp();
     process.exit(1);
   }
 
   const account = loadKeystoreAccount();
   console.log(`Paying from ${account.address}...`);
 
-  const result = await getRiskScore(address, account, { baseUrl, makePublic, jurisdictionAttestation });
+  const result = await getRiskScore(parsed.address, account, {
+    baseUrl: parsed.baseUrl,
+    makePublic: parsed.makePublic,
+    jurisdictionAttestation: parsed.jurisdictionAttestation,
+  });
 
   console.log("");
   console.log(`Address:         ${result.address}`);
@@ -91,7 +139,15 @@ async function main(): Promise<void> {
   console.log(`Explorer:        ${easExplorerUrl(result.network, result.attestationUid)}`);
 }
 
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+// Only run when this file is the actual entry point (real `vouch402`
+// CLI invocation), not when it's imported for its testable exports
+// (`resolveCommand`) -- otherwise importing this module at all runs
+// `main()` against whatever `process.argv` happens to be (e.g. a test
+// runner's own args), which is exactly the kind of side effect
+// `resolveCommand` was split out to avoid.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((err) => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  });
+}
