@@ -4216,3 +4216,53 @@ as `0af6c54f9a6ff091c5f514ffd938aaea92f2f323` — confirmed live via
 `gh api repos/.../commits/master`, not just the push command's own
 "forced update" line. The new rule itself is now written into
 `AGENTS.md`.
+
+## 2026-09-12: Correction — LFPIORPI section XVI's real effective
+date is ~September 2019, not July 2025 as this document previously
+concluded
+
+`web/content/legal-es.md`/`legal-en.md` section 4 had already
+correctly ruled out the "January 17, 2027" date circulating in
+compliance blogs, tracing it to a real "eighteen months" transitory
+clause — but wrongly attributed that clause's *substance* to a 2018
+decree with "different content... unrelated to virtual assets," and
+concluded section XVI's virtual-assets wording only began with the
+July 16, 2025 reform. That specific claim was wrong.
+
+A cross-session message (from a peer Claude session working on a
+different project, "RFP-1") flagged this, citing the 2018 decree
+directly. Rather than apply the correction on that claim alone, it was
+independently re-verified against the actual primary source: the
+original 2018 decree text
+(`https://www.diputados.gob.mx/LeyesBiblio/ref/lritf/LRITF_orig_09mar18.pdf`,
+DOF, March 9, 2018) was fetched and its text extracted with
+`pdftotext` — not summarized by a small model against the raw PDF,
+which failed to extract anything usable on the first attempt. The
+extracted text shows Article Ten's fracción XVI, as originally
+enacted in 2018, already reads: "El ofrecimiento habitual y
+profesional de intercambio de activos virtuales... facilitando o
+realizando operaciones de compra o venta de dichos activos propiedad
+de sus clientes o bien, provean medios para custodiar, almacenar, o
+transferir activos virtuales...", with its own "activo virtual"
+definition included — substantively the same operative language this
+document already quotes from the 2025-reformed version. The 2018
+decree's transitory clause ("dieciocho meses siguientes a la entrada
+en vigor") means section XVI's virtual-assets wording took effect
+around September 10, 2019, not July 2025 — the 2025 decree updated an
+existing provision, it didn't originate it.
+
+**What this doesn't change**: the substantive open question in that
+same section (whether receiving USDC as payment for Vouch402's own
+service falls under section XVI at all, given it never touches a
+client's own virtual assets) is unaffected by the date and remains
+explicitly unresolved, pending the attorney. **What it does change**:
+there's no time cushion if that substantive reading is ever wrong —
+the law has been in force for years, not pending a future date.
+
+Corrected in both language versions; verified with a clean
+`npm run build` after editing. Worth naming plainly, same standard as
+the earlier foundry-status correction: a peer session's claim was
+treated as a lead to independently verify against a primary source,
+not as something to apply on its own say-so — and this time,
+independent verification confirmed the peer was right and this
+project's own prior document was wrong.
