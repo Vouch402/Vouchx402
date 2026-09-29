@@ -89,6 +89,12 @@
     "tableOfContents": "En esta página",
     "sourceNote": "Esta página renderiza docs/TECHNICAL_SPEC.md directamente desde el repositorio: contenido de referencia técnica, que se mantiene en inglés sin importar el idioma del sitio, siguiendo la convención estándar de documentación para desarrolladores."
   },
+  "disclaimers": {
+    "informational": "Solo informativo. Quien consulta decide.",
+    "notCredit": "Datos de actividad on-chain. No es un reporte de crédito ni historial crediticio.",
+    "tokenizedEquity": "Datos sobre tenencias e interacciones on-chain. No es asesoría de inversión ni una recomendación para comprar, vender o mantener.",
+    "payments": "Los pagos van directamente de la wallet de quien paga a la tesorería propia de Vouch402. Vouch402 nunca retiene, enruta ni reenvía fondos de nadie más."
+  },
   "liveStats": {
     "title": "Actividad en vivo",
     "subtitle": "Contadores reales del despliegue en vivo: no estimados, no una maqueta.",
@@ -128,7 +134,7 @@
       "walletAgeDays": "antigüedad de la wallet (días)",
       "txCount": "cantidad de tx",
       "uniqueContractInteractions": "contratos únicos",
-      "flagged": "marcada",
+      "flagged": "en la lista de direcciones incluida",
       "tokenizedEquityExposure": "exposición a acciones tokenizadas",
       "none": "ninguna",
       "yes": "sí",
@@ -161,7 +167,7 @@
       "age": "{days}d",
       "txCount": "{count} tx",
       "contracts": "{count} contratos",
-      "flagged": "marcada"
+      "flagged": "en la lista de direcciones incluida"
     }
   },
   "tokenizedEquityDemo": {
@@ -177,7 +183,7 @@
     "eyebrow": "En vivo en Base mainnet",
     "title": "Vouch402",
     "subtitle": "Prueba de cumplimiento para pagos x402",
-    "intro": "x402 define cómo un agente autónomo paga por un recurso vía HTTP. No define cómo nadie, ni el pagador, ni el vendedor, ni un tercero, puede verificar después si el recurso pagado realmente se entregó. Una vez que un pago se liquida, no queda ningún registro portable y consultable que conecte ese pago con un resultado de cumplimiento, lo que dificulta construir sistemas de reputación, crédito o resolución de disputas para el comercio agente a agente sobre x402 hoy. Vouch402 es una API de puntaje de riesgo medida por x402 para direcciones de Base que cierra esta brecha para sí misma: x402-SAP (Service Attestation Protocol), una capa de attestations basada en EAS, registra un resultado verificable de forma independiente, on-chain, para cada solicitud pagada.",
+    "intro": "x402 define cómo un agente autónomo paga por un recurso vía HTTP. No define cómo nadie, ni el pagador, ni el vendedor, ni un tercero, puede verificar después si el recurso pagado realmente se entregó. Una vez que un pago se liquida, no queda ningún registro portable y consultable que conecte ese pago con un resultado de cumplimiento, lo que deja sin nada que leer a otros sistemas que podrían querer consumir ese registro, como herramientas de reputación de agentes o de resolución de disputas, para el comercio agente a agente sobre x402 hoy. Vouch402 es una API de puntaje de riesgo medida por x402 para direcciones de Base que cierra esta brecha para sí misma: x402-SAP (Service Attestation Protocol), una capa de attestations basada en EAS, registra un resultado verificable de forma independiente, on-chain, para cada solicitud pagada.",
     "cover": {
       "eyebrow": "Resumen",
       "summary": "Una API de puntaje de riesgo medida por x402 para direcciones de Base, con una capa de attestations on-chain que registra si cada solicitud pagada realmente se cumplió.",
@@ -290,7 +296,7 @@
     "roadmap": {
       "eyebrow": "Hoja de ruta",
       "title": "Hacia dónde va esto",
-      "body1": "Los datos de attestation que produce Vouch402, un grafo creciente y consultable de registros de pagador, receptor, resultado, y disputa, están diseñados para ser consumidos por futuros sistemas que necesiten señales de reputación de agentes o resolución de disputas, sin requerir que esos sistemas vuelvan a instrumentar cada servidor de recursos x402 por su cuenta.",
+      "body1": "Los datos de attestation que produce Vouch402, un grafo creciente y consultable de registros de pagador, receptor, resultado, y disputa, están diseñados para ser consumidos por futuros sistemas de terceros, como herramientas de reputación de agentes o de resolución de disputas, que sacan sus propias conclusiones de ellos, sin requerir que esos sistemas vuelvan a instrumentar cada servidor de recursos x402 por su cuenta.",
       "body2": "Una limitación, dicha con claridad y no disimulada: hoy las attestations de cumplimiento son auto-atestiguadas por el servidor de recursos (el vendedor), no por un tercero neutral. Este es un punto de partida intencional y explícitamente acotado. Establece el formato de los datos y produce un historial de cumplimiento real y consultable, mientras que la verificación descentralizada o de un tercero neutral (staking y slashing, consenso multi-atestador) queda como una capa futura y deliberadamente separada construida sobre estos datos, no resuelta por esta especificación."
     },
     "links": {

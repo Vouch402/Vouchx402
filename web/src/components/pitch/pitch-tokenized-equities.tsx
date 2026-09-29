@@ -19,6 +19,7 @@ const VERIFIED_CONTRACTS = [
 
 export function PitchTokenizedEquities() {
   const t = useTranslations("pitch.tokenizedEquities");
+  const tDisclaimers = useTranslations("disclaimers");
 
   return (
     <PitchSlide id="tokenized-equities" eyebrow={t("eyebrow")} index={6}>
@@ -76,6 +77,7 @@ export function PitchTokenizedEquities() {
       </div>
 
       <p className="prose-column mt-6 text-sm text-muted-foreground">{t("closing")}</p>
+      <p className="prose-column mt-2 text-sm text-muted-foreground">{tDisclaimers("tokenizedEquity")}</p>
     </PitchSlide>
   );
 }

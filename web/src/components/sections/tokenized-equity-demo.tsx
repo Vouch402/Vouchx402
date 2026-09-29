@@ -25,6 +25,7 @@ const ATTESTATIONS = [
 // never inside the <ul> RecentActivity renders.
 export function TokenizedEquityDemo() {
   const t = useTranslations("tokenizedEquityDemo");
+  const tDisclaimers = useTranslations("disclaimers");
 
   return (
     <div className="mt-12 rounded-md border border-dashed border-border bg-muted/30 p-5 sm:p-6">
@@ -33,6 +34,7 @@ export function TokenizedEquityDemo() {
       </Badge>
       <h3 className="mt-3 text-lg font-semibold tracking-tight">{t("title")}</h3>
       <p className="prose-column mt-2 text-sm text-muted-foreground">{t("subtitle")}</p>
+      <p className="prose-column mt-1 text-xs text-muted-foreground">{tDisclaimers("tokenizedEquity")}</p>
 
       <ul className="mt-4 divide-y divide-border">
         {ATTESTATIONS.map((a) => (

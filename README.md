@@ -3,6 +3,9 @@
 x402-metered on-chain risk intelligence for autonomous agents on Base,
 with a built-in proof-of-fulfillment attestation layer (x402-SAP).
 
+Informational only. The caller decides. On-chain activity data. Not a
+credit report and not credit history.
+
 Live: **https://www.vouch402.xyz** (Docs, the Try It demo, and the live
 activity feed) — direct API: **https://vouch402.fly.dev** (Base mainnet)
 
@@ -82,7 +85,8 @@ after Coinbase's tokenized US stocks launched on Base.
 
 Read-only throughout, by design: Vouch402 reports facts about
 tokenized-equity addresses. It never buys, sells, or custodies the
-underlying tokens.
+underlying tokens. Facts about on-chain holdings and interactions. Not
+investment advice and not a recommendation to buy, sell or hold.
 
 ## Ecosystem contributions
 
@@ -169,6 +173,9 @@ GET /v1/risk-score/:address          -> 402 + x402 payment requirements
 GET /v1/risk-score/:address           -> 200 + score, signals, attestationUid
   (retry, with X-PAYMENT: base64({resourceId, txHash, payer}))
 ```
+
+Payments go directly from the payer's wallet to Vouch402's own treasury.
+Vouch402 never holds, routes or forwards anyone else's funds.
 
 Every successful (or failed-after-payment) fulfillment is recorded as an
 `X402ServiceFulfillment` attestation on EAS: independently resolvable by

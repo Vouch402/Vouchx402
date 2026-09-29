@@ -16,12 +16,20 @@ import type { TocEntry } from "@/lib/toc";
 // server-only concern (fs), done once in page.tsx and passed down here.
 export function DocsContent({ markdown, toc }: { markdown: string; toc: TocEntry[] }) {
   const t = useTranslations("docs");
+  const tDisclaimers = useTranslations("disclaimers");
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
       <div className="max-w-2xl">
         <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">{t("title")}</h1>
         <p className="prose-column mt-3 text-sm text-muted-foreground">{t("sourceNote")}</p>
+        <div className="prose-column mt-3 space-y-1 text-sm text-muted-foreground">
+          <p>
+            {tDisclaimers("informational")} {tDisclaimers("notCredit")}
+          </p>
+          <p>{tDisclaimers("tokenizedEquity")}</p>
+          <p>{tDisclaimers("payments")}</p>
+        </div>
       </div>
 
       <div className="mt-12 grid gap-12 lg:grid-cols-[1fr_240px]">

@@ -9,10 +9,10 @@ x402 (HTTP 402-based payments for machine-to-machine commerce) defines how
 an agent pays for a resource. It does not define how anyone (the payer, the
 seller, or a third party) can later verify whether the paid resource was
 actually delivered. Once a payment settles, there is no portable, queryable
-record connecting that payment to a fulfillment outcome. This makes it hard
-to build reputation, credit, or dispute-resolution systems for agent-to-agent
-commerce on top of x402 today, because there is no fulfillment data to build
-them from.
+record connecting that payment to a fulfillment outcome. That leaves other
+systems that might want to consume such a record, such as agent-reputation or
+dispute-resolution tools built by third parties, with no fulfillment data to
+read for agent-to-agent commerce on top of x402 today.
 
 Vouch402 addresses one instance of this problem directly (it is itself an
 x402-paid data service), and ships a small, reusable protocol layer,

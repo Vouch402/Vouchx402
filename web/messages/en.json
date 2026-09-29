@@ -89,6 +89,12 @@
     "tableOfContents": "On this page",
     "sourceNote": "This page renders docs/TECHNICAL_SPEC.md directly from the repository: technical reference content, kept in English regardless of site language, matching standard developer-documentation convention."
   },
+  "disclaimers": {
+    "informational": "Informational only. The caller decides.",
+    "notCredit": "On-chain activity data. Not a credit report and not credit history.",
+    "tokenizedEquity": "Facts about on-chain holdings and interactions. Not investment advice and not a recommendation to buy, sell or hold.",
+    "payments": "Payments go directly from the payer's wallet to Vouch402's own treasury. Vouch402 never holds, routes or forwards anyone else's funds."
+  },
   "liveStats": {
     "title": "Live activity",
     "subtitle": "Real counters from the live deployment: not estimated, not a mockup.",
@@ -128,7 +134,7 @@
       "walletAgeDays": "wallet age (days)",
       "txCount": "tx count",
       "uniqueContractInteractions": "unique contracts",
-      "flagged": "flagged",
+      "flagged": "on bundled address list",
       "tokenizedEquityExposure": "tokenized equity exposure",
       "none": "none",
       "yes": "yes",
@@ -161,7 +167,7 @@
       "age": "{days}d",
       "txCount": "{count} txs",
       "contracts": "{count} contracts",
-      "flagged": "flagged"
+      "flagged": "on bundled address list"
     }
   },
   "tokenizedEquityDemo": {
@@ -177,7 +183,7 @@
     "eyebrow": "Live on Base mainnet",
     "title": "Vouch402",
     "subtitle": "Proof of fulfillment for x402 payments",
-    "intro": "x402 defines how an autonomous agent pays for a resource over HTTP. It does not define how anyone, the payer, the seller, or a third party, can later verify whether the paid resource was actually delivered. Once a payment settles, there is no portable, queryable record connecting that payment to a fulfillment outcome, which makes it hard to build reputation, credit, or dispute-resolution systems for agent-to-agent commerce on top of x402 today. Vouch402 is an x402-metered risk-score API for Base addresses that closes this gap for itself: x402-SAP (Service Attestation Protocol), a small EAS-based attestation layer, records an independently verifiable, on-chain outcome for every paid request.",
+    "intro": "x402 defines how an autonomous agent pays for a resource over HTTP. It does not define how anyone, the payer, the seller, or a third party, can later verify whether the paid resource was actually delivered. Once a payment settles, there is no portable, queryable record connecting that payment to a fulfillment outcome, which leaves other systems that might want to consume that record, such as agent-reputation or dispute-resolution tools, with nothing to read for agent-to-agent commerce on top of x402 today. Vouch402 is an x402-metered risk-score API for Base addresses that closes this gap for itself: x402-SAP (Service Attestation Protocol), a small EAS-based attestation layer, records an independently verifiable, on-chain outcome for every paid request.",
     "cover": {
       "eyebrow": "Overview",
       "summary": "An x402-metered risk-score API for Base addresses, with an on-chain attestation layer recording whether every paid request was actually fulfilled.",
@@ -290,7 +296,7 @@
     "roadmap": {
       "eyebrow": "Roadmap",
       "title": "What this is building toward",
-      "body1": "The attestation data Vouch402 produces, a growing, queryable graph of payer, payee, outcome, and dispute records, is designed to be consumable by future systems that need agent reputation or dispute-resolution signals, without requiring those systems to re-instrument every individual x402 resource server themselves.",
+      "body1": "The attestation data Vouch402 produces, a growing, queryable graph of payer, payee, outcome, and dispute records, is designed to be consumable by future third-party systems, such as agent-reputation or dispute-resolution tools, that draw their own conclusions from it, without requiring those systems to re-instrument every individual x402 resource server themselves.",
       "body2": "One limitation, stated plainly rather than glossed over: fulfillment attestations today are self-attested by the resource server (the seller), not by a neutral third party. This is an intentional, explicitly-scoped starting point. It establishes the data format and produces a real, queryable fulfillment history, while decentralized or neutral-party verification (staking and slashing, multi-attester consensus) is left as a deliberately separate, future layer built on top of this data, not solved by this specification."
     },
     "links": {

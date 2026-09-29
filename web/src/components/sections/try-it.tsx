@@ -137,6 +137,7 @@ function DemoStatus({
   onReset: () => void;
   t: ReturnType<typeof useTranslations<"tryIt">>;
 }) {
+  const tDisclaimers = useTranslations("disclaimers");
   if (phase.status === "idle") return null;
 
   if (phase.status === "quoting") {
@@ -209,6 +210,11 @@ function DemoStatus({
         />
         <Row label="attestationUid" value={truncateHex(result.attestationUid)} />
       </dl>
+
+      <p className="mt-4 text-xs text-muted-foreground">
+        {tDisclaimers("informational")} {tDisclaimers("notCredit")}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{tDisclaimers("tokenizedEquity")}</p>
 
       <div className="mt-4 flex flex-wrap gap-4 text-xs">
         <a href={basescanTxUrl(apiNetwork, txHash)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
