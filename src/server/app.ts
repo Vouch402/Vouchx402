@@ -20,6 +20,18 @@ import { checkTier1 } from "../lib/geoBlock";
 const RESTRICTED_JURISDICTIONS_URL = "https://www.vouch402.xyz/legal";
 
 /**
+ * Returned alongside every successful risk-score response, matching the
+ * site's `disclaimers` messages (web/messages/*.json) in substance. Kept
+ * outside `responsePayload` on purpose: the attested `responseHash` is
+ * keccak256 of `{ address, score, signals }` only, so adding this field
+ * doesn't change what an existing verifier recomputes.
+ */
+const RISK_SCORE_DISCLAIMER =
+  "Informational only. Vouch402 does not approve, reject or recommend any transaction. The caller decides. " +
+  "On-chain activity data, not a credit report or credit history. " +
+  "Facts about on-chain holdings and interactions, not investment advice or a recommendation to buy, sell or hold.";
+
+/**
  * Technical layer of the Tier 1 restriction (see `src/lib/geoBlock.ts`
  * and web/content/legal-*.md, "Restricted Jurisdictions"). Scoped to
  * the routes that actually deliver the paid service or its dispute
@@ -201,7 +213,7 @@ export function createApp(): Express {
         });
       }
 
-      res.status(200).json({ ...responsePayload, attestationUid });
+      res.status(200).json({ ...responsePayload, attestationUid, disclaimer: RISK_SCORE_DISCLAIMER });
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Fulfillment failed after payment was verified:", err);
