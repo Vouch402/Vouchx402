@@ -4,7 +4,7 @@ import { env, usdcAddressFor, payToFor, type NetworkName } from "../lib/env";
 import { insertQuote } from "../lib/db";
 
 /** How long an issued 402 quote stays payable before it expires. */
-const QUOTE_TTL_SECONDS = 300;
+export const QUOTE_TTL_SECONDS = 300;
 
 export interface X402Requirement {
   scheme: string;
@@ -29,11 +29,13 @@ export interface X402PaymentRequiredBody {
  * the retried request can be matched back to exactly this quote (price,
  * payTo, resourceId) rather than trusting whatever the client claims.
  *
- * v0 note: this resource server settles payments as direct on-chain USDC
- * transfers (agent sends the transfer itself, then retries with the tx
- * hash as proof) rather than the EIP-3009 signature + facilitator-relay
- * "exact" scheme from the reference x402 implementation. See
- * DECISION_LOG.md. The `scheme` value reflects that: "exact-direct".
+ * This is the `exact-direct` quote: the agent sends a plain USDC
+ * transfer itself, then retries with the tx hash as proof. It stays the
+ * JSON body (and `accepts[0]`) unchanged for vouch402-sdk, the CLI, the
+ * MCP server and the website. The standard x402 v2 `exact` scheme (a
+ * signed EIP-3009 authorization that the server settles to our own
+ * treasury) is offered alongside it in the PAYMENT-REQUIRED header; see
+ * ./exact.ts and DECISION_LOG.md.
  */
 export function issueQuote(network: NetworkName, address: string, resourcePath: string): X402PaymentRequiredBody {
   const payTo = payToFor(network);

@@ -47,7 +47,7 @@
       },
       "pay": {
         "title": "Pay on-chain",
-        "description": "Send the quoted USDC amount directly to the payTo address. A real, standard ERC-20 transfer: no facilitator, no off-chain step to trust."
+        "description": "Send the quoted USDC amount directly to the payTo address. A real, standard ERC-20 transfer from your own wallet: no third party in between, no off-chain step to trust."
       },
       "fulfill": {
         "title": "Get the score",
@@ -90,7 +90,7 @@
     "sourceNote": "This page renders docs/TECHNICAL_SPEC.md directly from the repository: technical reference content, kept in English regardless of site language, matching standard developer-documentation convention."
   },
   "disclaimers": {
-    "informational": "Informational only. The caller decides.",
+    "informational": "Informational only. Vouch402 does not approve, reject or recommend any transaction. The caller decides.",
     "notCredit": "On-chain activity data. Not a credit report and not credit history.",
     "tokenizedEquity": "Facts about on-chain holdings and interactions. Not investment advice and not a recommendation to buy, sell or hold.",
     "payments": "Payments go directly from the payer's wallet to Vouch402's own treasury. Vouch402 never holds, routes or forwards anyone else's funds."
@@ -208,7 +208,7 @@
         },
         "pay": {
           "title": "Pay",
-          "description": "The agent sends the quoted USDC amount on-chain: a standard ERC-20 transfer, no facilitator or off-chain signature relay involved."
+          "description": "The agent sends the quoted USDC amount on-chain from its own wallet: a standard ERC-20 transfer, no off-chain signature relay involved."
         },
         "fetch": {
           "title": "Fetch",

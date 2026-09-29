@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type { Server } from "node:http";
 import { createWalletClient } from "viem";
 import { baseSepolia } from "viem/chains";
-import { createApp } from "../src/server/app";
+import { createApp, RISK_SCORE_DISCLAIMER } from "../src/server/app";
 import { loadDeployerAccount } from "../src/lib/keystore";
 import { erc20Abi, publicClientFor, httpTransport } from "../src/lib/chain";
 import { env, explorerBaseFor } from "../src/lib/env";
@@ -109,6 +109,7 @@ describe("GET /v1/risk-score/:address (Base Sepolia)", () => {
     expect(body.score).toBeGreaterThanOrEqual(0);
     expect(body.score).toBeLessThanOrEqual(100);
     expect(body.signals).toBeDefined();
+    expect(body.disclaimer).toBe(RISK_SCORE_DISCLAIMER);
 
     console.log(`[Phase 1] Gate met: 200 response for a real settled payment. tx=${txHash} score=${body.score}`);
   }, 60_000);

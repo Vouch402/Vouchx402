@@ -13,7 +13,11 @@
     "resolveJsonModule": true,
     "declaration": false,
     "sourceMap": true,
-    "types": ["node", "vitest/globals"]
+    "types": ["node", "vitest/globals"],
+    "paths": {
+      "@x402/fetch": ["./node_modules/@x402/fetch/dist/cjs/index.d.ts"],
+      "@x402/evm/exact/client": ["./node_modules/@x402/evm/dist/cjs/exact/client/index.d.ts"]
+    }
   },
   "include": ["src/**/*", "scripts/**/*", "test/**/*"],
   "exclude": ["node_modules", "dist"]

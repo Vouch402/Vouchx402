@@ -47,7 +47,7 @@
       },
       "pay": {
         "title": "Pagar on-chain",
-        "description": "Envía el monto de USDC cotizado directamente a la dirección payTo. Una transferencia ERC-20 estándar y real: sin facilitador, sin ningún paso off-chain que haya que confiar a ciegas."
+        "description": "Envía el monto de USDC cotizado directamente a la dirección payTo. Una transferencia ERC-20 estándar y real desde tu propia wallet: sin terceros de por medio, sin ningún paso off-chain que haya que confiar a ciegas."
       },
       "fulfill": {
         "title": "Obtener el score",
@@ -90,7 +90,7 @@
     "sourceNote": "Esta página renderiza docs/TECHNICAL_SPEC.md directamente desde el repositorio: contenido de referencia técnica, que se mantiene en inglés sin importar el idioma del sitio, siguiendo la convención estándar de documentación para desarrolladores."
   },
   "disclaimers": {
-    "informational": "Solo informativo. Quien consulta decide.",
+    "informational": "Solo informativo. Vouch402 no aprueba, rechaza ni recomienda ninguna transacción. Quien consulta decide.",
     "notCredit": "Datos de actividad on-chain. No es un reporte de crédito ni historial crediticio.",
     "tokenizedEquity": "Datos sobre tenencias e interacciones on-chain. No es asesoría de inversión ni una recomendación para comprar, vender o mantener.",
     "payments": "Los pagos van directamente de la wallet de quien paga a la tesorería propia de Vouch402. Vouch402 nunca retiene, enruta ni reenvía fondos de nadie más."
@@ -208,7 +208,7 @@
         },
         "pay": {
           "title": "Pago",
-          "description": "El agente envía el monto de USDC cotizado on-chain: una transferencia ERC-20 estándar, sin facilitador ni relevo de firma fuera de la cadena."
+          "description": "El agente envía el monto de USDC cotizado on-chain desde su propia wallet: una transferencia ERC-20 estándar, sin relevo de firma fuera de la cadena."
         },
         "fetch": {
           "title": "Consulta",

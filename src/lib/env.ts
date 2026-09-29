@@ -53,6 +53,13 @@ export const env = {
 
   dbPath: optional("DB_PATH", "./data/vouch402.sqlite"),
 
+  // Worst-case L2 execution cost (gasLimit x maxFeePerGas, in wei) the
+  // server will pay to settle one standard x402 `exact` payment. Above
+  // it, nothing is submitted (see src/server/exact.ts). Default 2e12 wei
+  // = 0.000002 ETH, ~3.6x the p90 fee of 210 real Base mainnet EIP-3009
+  // USDC settlement calls measured 2026-09-29 (DECISION_LOG.md).
+  exactSettlementMaxCostWei: BigInt(optional("EXACT_SETTLEMENT_MAX_COST_WEI", "2000000000000")),
+
   requireEnv: required,
 };
 

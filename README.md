@@ -169,10 +169,37 @@ awaiting review, not merged.**
 
 ```
 GET /v1/risk-score/:address          -> 402 + x402 payment requirements
-  pay the quoted USDC amount on-chain
-GET /v1/risk-score/:address           -> 200 + score, signals, attestationUid
-  (retry, with X-PAYMENT: base64({resourceId, txHash, payer}))
+  exact-direct: pay the quoted USDC amount on-chain yourself
+  exact (x402 v2): sign an EIP-3009 authorization instead
+GET /v1/risk-score/:address           -> 200 + score, signals, disclaimer, attestationUid
+  exact-direct: retry with X-PAYMENT: base64({resourceId, txHash, payer, jurisdictionAttestation: true})
+  exact:        retry with PAYMENT-SIGNATURE (the client does this) + X-Jurisdiction-Attestation: true
 ```
+
+Two ways to pay, on the same `402`. `exact-direct` (the JSON body) is
+what `vouch402-sdk`, the CLI and the MCP server use. The standard x402
+v2 `exact` scheme (the `PAYMENT-REQUIRED` header) works with any
+off-the-shelf x402 v2 client: the server settles the payer's signed
+payment to our own treasury, paying the gas itself, and serves only
+after that settlement is confirmed on-chain. The one Vouch402-specific
+line is the jurisdiction header:
+
+```ts
+import { wrapFetchWithPayment, x402Client } from "@x402/fetch";
+import { registerExactEvmScheme } from "@x402/evm/exact/client";
+
+const client = new x402Client();
+registerExactEvmScheme(client, { signer: account }); // any viem account
+const fetchWithPayment = wrapFetchWithPayment(fetch, client);
+
+const res = await fetchWithPayment("https://vouch402.fly.dev/v1/risk-score/0x...", {
+  headers: { "X-Jurisdiction-Attestation": "true" },
+});
+```
+
+Only EOA signatures are accepted on the `exact` path, and x402 v1
+clients aren't supported (see
+[docs/TECHNICAL_SPEC.md](docs/TECHNICAL_SPEC.md#get-v1risk-scoreaddress)).
 
 Payments go directly from the payer's wallet to Vouch402's own treasury.
 Vouch402 never holds, routes or forwards anyone else's funds.
@@ -188,11 +215,11 @@ anyone, without trusting Vouch402's own word for what it returned. See
 # 1. Unpaid request -> 402 with payment requirements
 curl https://vouch402.fly.dev/v1/risk-score/0x53a79B109fa77c05B043e73A284a22b57c6263b0
 
-# 2. Pay the quoted USDC amount on-chain to `payTo` (any standard ERC-20
-#    transfer works; see docs/TECHNICAL_SPEC.md for why this isn't the
-#    EIP-3009/facilitator "exact" scheme). Then retry with proof:
+# 2. exact-direct: pay the quoted USDC amount on-chain to `payTo` (any
+#    standard ERC-20 transfer works). Then retry with proof:
 curl https://vouch402.fly.dev/v1/risk-score/0x53a79B109fa77c05B043e73A284a22b57c6263b0 \
-  -H "X-PAYMENT: $(echo -n '{"resourceId":"0x...","txHash":"0x...","payer":"0x..."}' | base64)"
+  -H "X-PAYMENT: $(echo -n '{"resourceId":"0x...","txHash":"0x...","payer":"0x...","jurisdictionAttestation":true}' | base64)"
+#    (Or use any x402 v2 client for the standard `exact` scheme; see above.)
 
 # Public, unpaid:
 curl https://vouch402.fly.dev/v1/metrics

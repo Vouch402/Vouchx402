@@ -100,6 +100,23 @@ function migrate(database: DatabaseSync) {
       network         TEXT NOT NULL,
       created_at      INTEGER NOT NULL
     );
+
+    -- Standard x402 \`exact\` settlements this server has submitted.
+    -- Written right after the tx is sent, before waiting on its receipt,
+    -- so a receipt timeout never strands a payment that later confirms:
+    -- the payer's retry finds this row and is served exactly once
+    -- (status goes pending -> served in one conditional UPDATE).
+    CREATE TABLE IF NOT EXISTS exact_settlements (
+      payer           TEXT NOT NULL,
+      nonce           TEXT NOT NULL,
+      network         TEXT NOT NULL,
+      tx_hash         TEXT NOT NULL,
+      address         TEXT NOT NULL,
+      status          TEXT NOT NULL,
+      created_at      INTEGER NOT NULL,
+      updated_at      INTEGER NOT NULL,
+      PRIMARY KEY (payer, nonce, network)
+    );
   `);
 
   addRequestsServedNetworkColumn(database);
@@ -215,6 +232,69 @@ export function markPaymentProcessed(params: {
        VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
     .run(params.txHash, params.resourceId, params.payer, params.payTo, params.amountAtomic, params.network, Date.now());
+}
+
+// ---- Standard x402 `exact` settlements (receipt-timeout recovery) ----
+
+export type ExactSettlementStatus = "pending" | "served" | "failed";
+
+export interface ExactSettlementRecord {
+  payer: string;
+  nonce: string;
+  network: string;
+  txHash: string;
+  address: string;
+  status: ExactSettlementStatus;
+}
+
+/**
+ * Records a just-sent settlement as pending. A row for the same
+ * authorization can only already exist as `failed` (its earlier tx
+ * reverted, so the nonce is still unused on-chain and the payer may
+ * retry it); any other existing status is left untouched.
+ */
+export function insertPendingExactSettlement(r: Omit<ExactSettlementRecord, "status">) {
+  const now = Date.now();
+  getDb()
+    .prepare(
+      `INSERT INTO exact_settlements (payer, nonce, network, tx_hash, address, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)
+       ON CONFLICT(payer, nonce, network) DO UPDATE SET
+         tx_hash = excluded.tx_hash, address = excluded.address, status = 'pending', updated_at = excluded.updated_at
+       WHERE exact_settlements.status = 'failed'`
+    )
+    .run(r.payer, r.nonce, r.network, r.txHash, r.address, now, now);
+}
+
+export function getExactSettlement(payer: string, nonce: string, network: string): ExactSettlementRecord | null {
+  const row = getDb()
+    .prepare(
+      `SELECT payer, nonce, network, tx_hash AS txHash, address, status
+       FROM exact_settlements WHERE payer = ? AND nonce = ? AND network = ?`
+    )
+    .get(payer, nonce, network) as ExactSettlementRecord | undefined;
+  return row ?? null;
+}
+
+/**
+ * Compare-and-set on status: true only for the one caller whose UPDATE
+ * actually moved the row from `from` to `to`. This is what makes
+ * "served exactly once" hold even for concurrent requests.
+ */
+export function transitionExactSettlement(
+  payer: string,
+  nonce: string,
+  network: string,
+  from: ExactSettlementStatus,
+  to: ExactSettlementStatus
+): boolean {
+  const result = getDb()
+    .prepare(
+      `UPDATE exact_settlements SET status = ?, updated_at = ?
+       WHERE payer = ? AND nonce = ? AND network = ? AND status = ?`
+    )
+    .run(to, Date.now(), payer, nonce, network, from);
+  return Number(result.changes) === 1;
 }
 
 // ---- Requests served (for /v1/metrics) ----

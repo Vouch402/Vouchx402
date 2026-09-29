@@ -53,8 +53,39 @@ could adopt to close this gap generally.
 
 ### `GET /v1/risk-score/:address`
 
-x402-gated. First request without payment proof returns `402` with x402
-payment requirements (price, `payTo`, asset = USDC on Base, a `resourceId`).
+x402-gated. First request without payment proof returns `402` carrying
+two payment options, each where its own clients look for it:
+
+- **`exact-direct`** (JSON body, `x402Version: 1`, `accepts[0]`): price,
+  `payTo`, asset = USDC on Base, a `resourceId`. The caller sends a plain
+  USDC `transfer` itself, then retries with header
+  `X-PAYMENT: base64({ resourceId, txHash, payer, jurisdictionAttestation: true })`.
+  This is what `vouch402-sdk`, the CLI, the MCP server and the website use,
+  unchanged.
+- **Standard x402 v2 `exact`** (`PAYMENT-REQUIRED` header, base64 JSON,
+  `x402Version: 2`): network `eip155:8453` (`eip155:84532` on Base
+  Sepolia), asset = USDC, `amount` = the price in atomic units, `payTo` =
+  Vouch402's treasury (`0xb440b82Fb537A56eD8FC045Da622B469E88Fd2bB`),
+  `extra` = USDC's EIP-712 domain (`name`/`version`). Any off-the-shelf
+  x402 v2 client can pay it: the payer signs an EIP-3009
+  `transferWithAuthorization` for exactly the price, the client retries
+  with the `PAYMENT-SIGNATURE` header, and the server settles the payer's
+  signed payment to our own treasury (it submits the authorization and
+  pays the gas), then responds with a `PAYMENT-RESPONSE` header carrying
+  the settlement transaction hash. The jurisdiction attestation is sent
+  as a request header, the one line a standard client needs on top of
+  its defaults:
+
+  ```ts
+  await fetchWithPayment(url, { headers: { "X-Jurisdiction-Attestation": "true" } });
+  ```
+
+  Only EOA (65-byte ECDSA) signatures are accepted on this path. x402 v1
+  `exact` clients are not supported: the v1 client library validates
+  every entry in the body's `accepts` array against a schema whose
+  `scheme` is `"exact"` only, so it rejects the `exact-direct` entry that
+  existing clients rely on (see `DECISION_LOG.md`).
+
 A retried request with valid payment proof returns:
 
 ```json
@@ -68,9 +99,14 @@ A retried request with valid payment proof returns:
     "flagged": false,
     "tokenizedEquityExposure": []
   },
-  "attestationUid": "0x..."
+  "attestationUid": "0x...",
+  "disclaimer": "Informational only. Vouch402 does not approve, reject or recommend any transaction. The caller decides. ..."
 }
 ```
+
+`disclaimer` is a fixed string returned with every successful response.
+It is not part of the attested payload: `responseHash` covers
+`{ address, score, signals }` only, so existing verifiers are unaffected.
 
 `score` is derived from public on-chain signals (wallet age, transaction
 count, unique contract-interaction diversity, and membership on a bundled,
@@ -155,6 +191,26 @@ Every paid request is verified server-side before the resource is released:
 4. Confirm amount and recipient match what was quoted in the `402` response.
 5. Mark the payment as processed **before** returning the resource.
 
+For the standard `exact` scheme, the server settles the payer's signed
+payment to our own treasury only if every one of these holds, all checked
+before anything is submitted: the authorization's `to` equals the treasury
+(checksum-compared), `value` equals exactly the quoted price, the token is
+Base USDC and the chain is the configured network (both also bound by the
+EIP-712 domain the signature is recovered against), the validity window
+is current, the nonce is unused (USDC `authorizationState`), and the
+signature recovers to `from`. The call is then dry-run, and refused with a
+`503` (nothing submitted, the authorization left unused) if its worst-case
+gas cost, gas limit × max fee per gas, exceeds `EXACT_SETTLEMENT_MAX_COST_WEI`
+(default `2000000000000` wei). Otherwise it is submitted with exactly those
+limits pinned by Vouch402's own signer (which only ever pays gas; it is
+never the recipient), and the resource is served only after the receipt confirms a
+USDC `Transfer` from the payer to the treasury for exactly the price.
+The settlement transaction hash becomes `x402PaymentRef` and
+`authorization.from` becomes `payer`, exactly as with `exact-direct`.
+There is no endpoint or tool that submits an authorization for anything
+other than a paid request for this resource: one authorization pays for
+exactly one request.
+
 Frontend-reported payment confirmation is never trusted on its own.
 
 ## x402-SAP: attestation schemas (EAS, deployed on Base)
@@ -207,12 +263,19 @@ Vouch402 never holds, custodies, or transmits funds belonging to a third
 party. It sells data for a fee paid directly to its own receiving address.
 It is not an intermediary between any two other parties' funds, and it does
 not offer custody, exchange, or transfer of virtual assets to its users.
+On the standard `exact` path the server submits the payer's own signed
+transfer, whose only possible recipient is Vouch402's treasury, as payment
+for this one request; the signer wallet that submits it pays the gas and
+never receives or holds the funds.
 
 ## Testing
 
 Integration tests exercise the full flow against Base Sepolia: unpaid
 request -> `402` -> real testnet USDC payment -> retried request -> `200` with
 score + attestation UID -> attestation independently resolvable via EAS.
+The standard `exact` scheme is exercised end-to-end with the official
+x402 v2 client (`@x402/fetch` + `@x402/evm`) paying a local server, and
+every rejection rule above has its own unit test.
 Disputes are tested by filing one against a known fulfillment attestation
 and confirming the `refUID` link resolves correctly.
 
