@@ -4785,3 +4785,47 @@ before committing; the revert was verified byte-exact via `diff`
 against a pre-edit backup, not just visually. Full real-chain suite
 re-run clean after cleanup: server 8/8, attestation 2/2, metrics+score+
 wording+exact-unit 61/61, exact-e2e 1/1, sdk 4/4, cli 12/12.
+
+## 2026-10-16 (later): Published `vouch402-sdk@1.0.0` and
+`vouch402-mcp-server@1.0.0` -- `vouch402` (CLI) needed `1.0.1` instead,
+`1.0.0` came back permanently unusable
+
+Two local commits went in first, both staying local (not pushed) per
+the deploy-order rule above: `b79c291` (the signature fix) and
+`f5c3df1` (a separate branding/identity commit, not security-sensitive,
+unrelated content excluded first -- two personal photos and a tooling
+cache moved to `.gitignore`, a duplicated skill directory deleted).
+
+`npm publish` for `vouch402-sdk` and `vouch402-mcp-server` both
+appeared to fail on first read (`npm view <pkg> version` kept showing
+`0.3.2` for a full minute of polling) -- this turned out to be registry
+read-replica lag, not a real failure, exactly the class of delay
+`npm-publish-handoff` already documents for this registry. A direct,
+specific-version query (`npm view <pkg>@1.0.0`, `npm view <pkg>
+dist-tags --json`) confirmed both were genuinely live with `latest`
+correctly pointing at `1.0.0`. Didn't stop at the version number for
+`mcp-server`: downloaded the real published tarball (`npm pack
+vouch402-mcp-server@1.0.0`) and confirmed the actual shipped
+`dist/index.js` contains the real `signature` parameter wiring, not a
+stale pre-fix build -- worth the extra step given the local `npm run
+build` for `mcp-server` had errored moments earlier in the same
+terminal session (before `vouch402-sdk@1.0.0` was itself resolvable),
+so it wasn't safe to assume the published tarball was the right one
+just because the version number matched.
+
+`vouch402` (the CLI) came back genuinely different: `npm publish`
+returned `400 Bad Request — Cannot publish over previously published
+version "1.0.0"`, and `npm view vouch402@1.0.0` gave a real `404`, not
+a lag artifact -- confirmed by also checking `npm view vouch402
+versions --json`, which doesn't list `1.0.0` at all, and `dist-tags`,
+which still points `latest` at `0.3.2`. The likely cause: an earlier,
+unobserved publish attempt (before this session asked to see the
+terminal output) published `1.0.0` and then unpublished it, and npm
+permanently blocks reusing an exact version number once that happens,
+specifically to prevent a previously-trusted version number being
+swapped for different content later (a real supply-chain protection,
+not a bug). Fixed by bumping to `1.0.1` -- no code change from what
+`1.0.0` would have shipped, confirmed via a fresh `npm install`
+(now actually resolving the real `vouch402-sdk@1.0.0`, not erroring
+with `ETARGET` like it had moments earlier), build, and test run
+(12/12 passing) before handing the new publish command back.

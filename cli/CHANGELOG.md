@@ -1,6 +1,14 @@
 # Changelog
 
-## 1.0.0 — 2026-10-07
+## 1.0.1 — 2026-10-16
+
+`1.0.0` was never actually resolvable from the registry: an earlier
+publish attempt for that exact version got published and then
+unpublished, and npm permanently blocks reusing a version number once
+that happens. No code change from what `1.0.0` would have shipped --
+see that entry below for what actually changed.
+
+## 1.0.0 — 2026-10-07 (never resolvable on the registry, see 1.0.1 above)
 
 No change to this CLI's own command-line interface. Bumped to `1.0.0`
 and its `vouch402-sdk` dependency to `^1.0.0` to stay in step with the
