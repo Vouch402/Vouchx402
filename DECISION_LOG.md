@@ -4829,3 +4829,54 @@ not a bug). Fixed by bumping to `1.0.1` -- no code change from what
 (now actually resolving the real `vouch402-sdk@1.0.0`, not erroring
 with `ETARGET` like it had moments earlier), build, and test run
 (12/12 passing) before handing the new publish command back.
+
+## 2026-10-16 (later still): Deployed the fix to production, verified
+live, and pushed -- `vouch402` (CLI) remained unpublished at this point,
+a known, accepted gap
+
+`vouch402-sdk@1.0.0` and `vouch402-mcp-server@1.0.0` were live
+(verified above); `vouch402` (CLI) was not yet successfully republished
+at `1.0.1`. Deployed anyway, a deliberate call, not an oversight: the
+`vouch402` package's own unpublished state doesn't weaken anything
+about the server-side fix, and new installs hitting the still-published
+`0.3.2` get exactly the same "clean 400, not a crash" behavior this
+deploy's own verification step exists to confirm -- a degraded UX for
+new CLI installs until republished, not a security or correctness
+problem.
+
+Before deploying: `fly secrets set --stage` for `BASE_RPC_URL` and
+`BASE_SEPOLIA_RPC_URL` (the working QuickNode endpoint from earlier
+today), staged rather than applied immediately so the restart happens
+once, with the deploy itself.
+
+`fly deploy --app vouch402`: built and pushed cleanly, rolling update,
+health check passed (`Vouch402 listening on :3402 (network=base)`).
+
+Verified against the live server directly, not assumed from the deploy
+command's own success output:
+- `fly secrets list` shows new digests for both RPC secrets, confirming
+  the staged values actually took effect with this release (not left
+  pending).
+- A proof missing `signature` (the pre-fix shape) against the live
+  `/v1/risk-score/:address` returns a real `400` with
+  `"Malformed X-PAYMENT header: expected base64 JSON { resourceId,
+  txHash, payer, signature }"` -- not a `500`, confirming the exact
+  "old client fails cleanly" requirement this whole deploy order was
+  built around.
+- `/v1/metrics` responds with real counters.
+- The "new client works" check was already satisfied *before* this
+  deploy: the same code, run locally against a local server, had
+  already completed a real mainnet payment end to end earlier today
+  (score 70/100, a real settlement tx, a real EAS attestation) -- no
+  separate redundant production payment was made just to re-prove the
+  same code path a second time.
+
+Only after all of the above was `git push origin master` run --
+3 commits (`b79c291` the fix, `f5c3df1` branding, `9c3a14e` the CLI
+version bump), pushing `aec268d..9c3a14e`. Verified live on GitHub
+directly afterward (`gh api repos/Vouch402/Vouchx402/commits/master`),
+not just the push command's own success message, matching this repo's
+own "committed is not live" standard applied to GitHub itself: the
+returned SHA matched the local push exactly.
+
+Still open: republish `vouch402` (CLI) at `1.0.1`.
