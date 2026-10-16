@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "base": {
+      "source": "bytesagain/ai-skills",
+      "sourceType": "github",
+      "skillPath": "base/SKILL.md",
+      "computedHash": "7710ccf9d3fd1694e3cacb4ec193e1954aab727da73583538b3b5ef7f4927198"
+    },
     "base-mcp": {
       "source": "base/skills",
       "sourceType": "github",
@@ -12,6 +18,12 @@
       "sourceType": "github",
       "skillPath": "skills/build-on-base/SKILL.md",
       "computedHash": "37faff15db76d9a81dd8082235f2bc76e37b07c04fd0cc1df3ef348caa664374"
+    },
+    "vibenet": {
+      "source": "base/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vibenet/SKILL.md",
+      "computedHash": "29e206874fbe704cfac917d574557fdd46101520a1d26f33a9ff754c888db51f"
     }
   }
 }

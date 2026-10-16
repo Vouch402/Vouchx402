@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { easExplorerUrl } from "@/lib/vouch402";
 import { truncateHex } from "@/lib/format";
+import { HeroMark } from "./hero-mark";
 
 // A real, independently-verified mainnet fulfillment attestation (see
 // DECISION_LOG.md "First real mainnet activity on the live deployment"),
@@ -36,7 +37,16 @@ export function Hero() {
             {t("eyebrow")}
           </Badge>
 
-          <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl">Vouch402</h1>
+          <div className="flex items-center gap-4">
+            <HeroMark />
+            <div>
+              <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl">Vouch402</h1>
+              <p className="hero-status mt-1 font-mono text-xs text-muted-foreground" aria-hidden="true">
+                <span className="hero-status__step block">402 Payment Required</span>
+                <span className="hero-status__step block text-success">200 OK · attested</span>
+              </p>
+            </div>
+          </div>
           <p className="prose-column mt-4 text-lg text-muted-foreground sm:text-xl">{t("tagline")}</p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">

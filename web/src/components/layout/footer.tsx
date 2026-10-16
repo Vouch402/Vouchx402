@@ -26,6 +26,16 @@ export function Footer() {
             {t("legal")}
           </Link>
           <a
+            // Next's static /public serving has no directory-index
+            // resolution, and a trailing-slash URL redirects to the
+            // no-slash form (which then breaks this page's own relative
+            // asset paths) — link straight to the real file.
+            href="/branding-vouch402/index.html"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t("brand")}
+          </a>
+          <a
             href={GITHUB_URL}
             target="_blank"
             rel="noopener noreferrer"

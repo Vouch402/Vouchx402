@@ -6,12 +6,29 @@ dist/
 .DS_Store
 data/*.sqlite*
 
-# Vendored third-party skill reference docs used by the build agent,
-# not Vouch402's own code, kept local only. See DECISION_LOG.md.
+# Vendored third-party skill reference docs used by the build agent
+# to assemble .claude/skills/ (base-mcp, build-on-base, vibenet), not
+# Vouch402's own code — kept local only. See DECISION_LOG.md.
+# .claude/ itself (skills, commands, settings) is intentionally NOT
+# ignored: it's tracked and public so a fresh clone gets working
+# Claude Code skill auto-discovery, and every SKILL.md in it is
+# audited for content safety before being committed — see
+# DECISION_LOG.md, 2026-09-17.
 .agents/
-.claude/
+
+# Same reasoning as .agents/ above, for a different tool: Aider's own
+# mirrored copy of the same skill set (base, base-mcp, build-on-base,
+# vibenet), generated for its own use. Not referenced by package.json
+# or any build/runtime path in this repo -- confirmed 2026-10-16.
+.aider-desk/
 
 # Local Claude Code MCP tooling config (Base MCP), not part of the
 # product itself. Doesn't hold secrets, just not something to ship in
 # this repo's history for anyone who clones it.
 .mcp.json
+
+# Personal photos, not referenced anywhere in the site's code --
+# confirmed 2026-10-16. Kept locally only; if the site ever needs them,
+# serve from outside the repo (a CDN, an env var, an upload path), not
+# from version control.
+images/

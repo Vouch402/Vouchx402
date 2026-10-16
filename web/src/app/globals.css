@@ -293,3 +293,107 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Hero mark — the animated "V" seal. Built from Vouch402's own brand
+   elements (the V icon, its attestation seal-hole, and the product's
+   own x402: 402 -> 200 request lifecycle), not a generic hero graphic.
+   See /branding-vouch402 for the source mark this is built from. */
+@keyframes hero-seal-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(0, 82, 255, 0);
+  }
+  50% {
+    box-shadow: 0 0 28px 6px rgba(0, 82, 255, 0.35);
+  }
+}
+@keyframes hero-seal-ripple {
+  0% {
+    transform: scale(0.75);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.65);
+    opacity: 0;
+  }
+}
+@keyframes hero-seal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes hero-status-cycle {
+  0%,
+  40% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  48%,
+  92% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-mark {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  flex: none;
+}
+.hero-mark__panel {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  animation: hero-seal-glow 3.6s ease-in-out infinite;
+}
+.hero-mark__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 1.5px solid var(--primary);
+  animation: hero-seal-ripple 3.2s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+}
+.hero-mark__ring--delay {
+  /* negative delay: starts mid-ripple instead of holding at the 0%
+     (small/opaque) state for 1.6s before the stagger kicks in. */
+  animation-delay: -1.6s;
+}
+.hero-mark__dashed {
+  position: absolute;
+  inset: -0.5rem;
+  z-index: 1;
+  animation: hero-seal-spin 22s linear infinite;
+}
+.hero-status {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  height: 1.1em;
+  vertical-align: -0.15em;
+}
+.hero-status__step {
+  animation: hero-status-cycle 3.4s ease-in-out infinite;
+}
+.hero-status__step:nth-child(2) {
+  position: absolute;
+  inset: 0;
+  /* negative delay: jump straight to the mid-cycle (hidden) phase
+     instead of holding at the default opacity for 1.7s first, which
+     would show both steps fully opaque and overlapping on load. */
+  animation-delay: -1.7s;
+}

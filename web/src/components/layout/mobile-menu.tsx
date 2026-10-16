@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { NAV_LINKS } from "./nav-links";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 const LANGUAGE_LABELS: Record<string, string> = { en: "English", es: "Español" };
 // Repo went public 2026-09-07 (github.com/Vouch402/Vouchx402); restores
@@ -31,6 +32,9 @@ export function MobileMenu() {
   const { locale, setLocale, locales } = useLocalePreference();
   const { network, setNetwork } = useNetwork();
   const { theme, setTheme } = useTheme();
+  // Same hydration-mismatch fix as ThemeSelector — see its comment.
+  const hydrated = useHydrated();
+  const resolvedTheme = hydrated ? theme : "system";
 
   const networkOptions: { value: Network; label: string }[] = [
     { value: "testnet", label: tSel("testnet") },
@@ -120,7 +124,7 @@ export function MobileMenu() {
               {themeOptions.map(({ value, label, Icon }) => (
                 <Button
                   key={value}
-                  variant={value === theme ? "default" : "outline"}
+                  variant={value === resolvedTheme ? "default" : "outline"}
                   size="sm"
                   className="flex-1 gap-1.5"
                   onClick={() => setTheme(value)}

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Vouch402 icon, single color light">
+<defs>
+  <mask id="holeMonoL" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+    <rect x="0" y="0" width="100" height="100" fill="#fff"/>
+    <circle cx="51.0" cy="84.0" r="4.21" fill="#000"/>
+  </mask>
+</defs>
+<g mask="url(#holeMonoL)" fill="#FFFFFF">
+    <path d="M 7.85 19.35 L 43.09 88.30 L 58.91 79.70 L 20.15 12.65 Z"/>
+    <path d="M 80.45 11.89 L 41.86 79.03 L 60.14 88.97 L 95.55 20.11 Z"/>
+    <circle cx="51.0" cy="84.0" r="9.568"/>
+    <circle cx="14.0" cy="16.0" r="7.0"/>
+    <circle cx="88.0" cy="16.0" r="8.6"/>
+  </g>
+</svg>

@@ -1,0 +1,8 @@
+Geist and Geist Mono are licensed under the SIL Open Font License 1.1.
+Source: https://github.com/vercel/geist-font
+
+Free for commercial use, no attribution required. Bundled here only
+for convenience, in case new text needs to be set in this brand's
+typeface elsewhere. The deliverable SVG/PNG logo files in this pack do
+NOT depend on these being installed — every wordmark is already
+outlined to vector paths.

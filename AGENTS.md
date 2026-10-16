@@ -65,6 +65,14 @@ assuming what's live on npm.
   `https://www.vouch402.xyz` for frontend changes, a real `curl` against
   `https://vouch402.fly.dev` for API changes, `gh issue view <n>` (a
   separate read, not the `gh issue create` output) for filed issues.
+  The same lesson runs in reverse too: a local checkout's `master` can be
+  *behind* `origin/master` — another session can push directly without
+  this checkout ever pulling. `git fetch` and compare
+  (`git rev-parse master origin/master`, `git merge-base --is-ancestor`)
+  before trusting local `master` as current, especially before a
+  multi-file change — see `DECISION_LOG.md`, 2026-10-07, for the real
+  case (3 real commits, including a live-in-production feature, missing
+  from a local checkout for over a week).
 - **Privacy model**: scored results are attestation-only on the public
   activity feed by default (no address/score/signals shown) unless the
   payer sets `makePublic: true`, or it's the team's own dev/test wallet
@@ -78,6 +86,19 @@ assuming what's live on npm.
   output (`git rev-list`, `gh api`, a registry read), not just the
   command's own success message — same standard as "Committed is not
   live" above, applied to actions outside this repo too.
+- **A fix for a security vulnerability waits to be pushed until the fix
+  is live, not just until someone says go.** The repo is public:
+  anything that describes or reproduces a hole — a `DECISION_LOG.md`
+  entry naming the exploit, a test that reproduces it, a breaking-change
+  notice — stays local even after local commit and explicit approval,
+  until the corresponding deploy is verified fixed in production.
+  Local commits are fine beforehand (`fly deploy` builds from the local
+  checkout, not from GitHub); publish any dependent npm packages first,
+  deploy, verify both that a new client works and that an old client
+  fails *cleanly* (a clear error, not a 500) — never a window where the
+  server accepts both the old and new formats — and only then `git push`,
+  all in one sitting. See `DECISION_LOG.md`, 2026-10-07, and
+  `$security-fix-deploy-order` for the full step-by-step.
 - **`Co-Authored-By: Claude...` goes on every commit with AI assistance,
   regardless of whose identity signs it.** Who authored a commit (which
   team member's name/email) and whether AI assisted it are two separate
@@ -155,6 +176,11 @@ keep re-attempting. Only findings verified by actually running/reproducing
 them count; never manufacture a finding to have something to show.
 
 ## Session hygiene
+
+**Real mainnet payments and npm publishes both need a human handoff in
+this environment** (no fund-moving credentials, no npm credentials) —
+see `$mainnet-payment-handoff` and `$npm-publish-handoff` for the exact
+recipes, learned from real failed attempts, not written from theory.
 
 **When resuming with `claude --continue`, don't re-read what's already
 in context or re-verify what's already verified this session.** Answer

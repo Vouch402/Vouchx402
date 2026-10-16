@@ -3,6 +3,7 @@
 import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
 import { Sun, Moon, Monitor } from "lucide-react";
+import { useHydrated } from "@/hooks/use-hydrated";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,12 +17,15 @@ const ICONS = { light: Sun, dark: Moon, system: Monitor } as const;
 export function ThemeSelector({ compact = false }: { compact?: boolean }) {
   const { theme, setTheme } = useTheme();
   const t = useTranslations("selectors");
-  // `theme` is typed `string | undefined` specifically because next-themes
-  // returns undefined until it's read localStorage client-side; using
-  // that directly (rather than a second useState+useEffect just to track
-  // "have we mounted yet") avoids an extra render pass and the
-  // set-state-in-effect lint rule this project enforces.
-  const current = (theme ?? "system") as keyof typeof ICONS;
+  const hydrated = useHydrated();
+  // `theme` is only meaningful once next-themes has read localStorage
+  // client-side. Gating on `hydrated` (useSyncExternalStore, not a
+  // useState+useEffect pair) keeps the first client render identical to
+  // the server's — real bug found 2026-09-18: without this, a returning
+  // visitor with an explicit light/dark choice saved renders a different
+  // icon than SSR did, and React discards+rebuilds the whole subtree
+  // (a real console error, not just noise). See DECISION_LOG.md.
+  const current = (hydrated ? (theme ?? "system") : "system") as keyof typeof ICONS;
   const Icon = ICONS[current] ?? Monitor;
 
   const options: { value: "light" | "dark" | "system"; label: string }[] = [
@@ -46,7 +50,7 @@ export function ThemeSelector({ compact = false }: { compact?: boolean }) {
             <DropdownMenuItem
               key={opt.value}
               onClick={() => setTheme(opt.value)}
-              aria-current={opt.value === theme ? "true" : undefined}
+              aria-current={opt.value === current ? "true" : undefined}
               className="gap-2"
             >
               <OptIcon className="size-4" aria-hidden="true" />
