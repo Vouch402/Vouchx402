@@ -11,7 +11,7 @@ import { getEas, getAttestationWithRetry } from "../src/lib/eas";
 import { registerSchemas, FULFILLMENT_SCHEMA, DISPUTE_SCHEMA } from "../src/attestation/schemas";
 import { disputeMessage, DisputeReasonCode } from "../src/attestation/dispute";
 import { SchemaEncoder } from "@ethereum-attestation-service/eas-sdk";
-import type { X402PaymentRequiredBody } from "../src/server/x402";
+import { paymentProofMessage, type X402PaymentRequiredBody } from "../src/server/x402";
 
 /**
  * Phase 2 gate (docs/TECHNICAL_SPEC.md "Testing" + x402-SAP): full
@@ -64,10 +64,14 @@ describe("x402-SAP attestations (Base Sepolia)", () => {
     });
     await publicClientFor("base-sepolia").waitForTransactionReceipt({ hash: txHash });
 
+    const paymentSignature = await account.signMessage({
+      message: paymentProofMessage(requirement.network, requirement.extra.resourceId, txHash),
+    });
     const proof = {
       resourceId: requirement.extra.resourceId,
       txHash,
       payer: account.address,
+      signature: paymentSignature,
       jurisdictionAttestation: true,
     };
     const xPayment = Buffer.from(JSON.stringify(proof)).toString("base64");

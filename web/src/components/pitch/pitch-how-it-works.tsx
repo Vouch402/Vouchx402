@@ -13,9 +13,13 @@ curl https://vouch402.fly.dev/v1/risk-score/0x53a79B109fa77c05B043e73A284a22b57c
 
 # 2. Pay the quoted USDC amount on-chain to \`payTo\` (any standard ERC-20
 #    transfer works; see docs/TECHNICAL_SPEC.md for why this isn't the
-#    EIP-3009/facilitator "exact" scheme). Then retry with proof:
+#    EIP-3009/facilitator "exact" scheme). Sign "Vouch402 payment proof\\n
+#    network: <network>\\nresourceId: <resourceId>\\ntxHash: <txHash>" with
+#    the paying address (proves you control it, not just that it appears
+#    on-chain -- see
+#    docs/TECHNICAL_SPEC.md#payment-proof-signature), then retry with proof:
 curl https://vouch402.fly.dev/v1/risk-score/0x53a79B109fa77c05B043e73A284a22b57c6263b0 \\
-  -H "X-PAYMENT: $(echo -n '{"resourceId":"0x...","txHash":"0x...","payer":"0x..."}' | base64)"`;
+  -H "X-PAYMENT: $(echo -n '{"resourceId":"0x...","txHash":"0x...","payer":"0x...","signature":"0x..."}' | base64)"`;
 
 export function PitchHowItWorks() {
   const t = useTranslations("pitch.howItWorks");

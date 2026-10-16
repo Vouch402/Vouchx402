@@ -2,7 +2,12 @@ import dotenv from "dotenv";
 import path from "node:path";
 
 const ROOT = path.resolve(__dirname, "..", "..");
-dotenv.config({ path: path.join(ROOT, ".env") });
+// quiet: true suppresses dotenv's own stdout noise -- both its "injected
+// env (N)" line and its randomly-rotating promotional "tip" line (e.g.
+// "auth for agents [www.vestauth.com]"), a real but harmless feature of
+// dotenv itself (see TIPS in node_modules/dotenv/lib/main.js), not
+// anything this project added or any third-party injection.
+dotenv.config({ path: path.join(ROOT, ".env"), quiet: true });
 // .env.local is optional and loaded second, with override: standard
 // convention (Next.js/Vite/CRA all do this): .env is the tracked-in-spirit
 // baseline (still gitignored here, but the "normal" file), .env.local is
@@ -10,7 +15,7 @@ dotenv.config({ path: path.join(ROOT, ".env") });
 // new/different for a mainnet cutover). Missing keys in .env.local simply
 // keep whatever .env already set: this never blanks out a value, only
 // overrides the ones actually present here.
-dotenv.config({ path: path.join(ROOT, ".env.local"), override: true });
+dotenv.config({ path: path.join(ROOT, ".env.local"), override: true, quiet: true });
 
 function required(name: string): string {
   const v = process.env[name];

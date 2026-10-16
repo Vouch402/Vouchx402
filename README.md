@@ -172,7 +172,7 @@ GET /v1/risk-score/:address          -> 402 + x402 payment requirements
   exact-direct: pay the quoted USDC amount on-chain yourself
   exact (x402 v2): sign an EIP-3009 authorization instead
 GET /v1/risk-score/:address           -> 200 + score, signals, disclaimer, attestationUid
-  exact-direct: retry with X-PAYMENT: base64({resourceId, txHash, payer, jurisdictionAttestation: true})
+  exact-direct: retry with X-PAYMENT: base64({resourceId, txHash, payer, signature, jurisdictionAttestation: true})
   exact:        retry with PAYMENT-SIGNATURE (the client does this) + X-Jurisdiction-Attestation: true
 ```
 
@@ -216,9 +216,13 @@ anyone, without trusting Vouch402's own word for what it returned. See
 curl https://vouch402.fly.dev/v1/risk-score/0x53a79B109fa77c05B043e73A284a22b57c6263b0
 
 # 2. exact-direct: pay the quoted USDC amount on-chain to `payTo` (any
-#    standard ERC-20 transfer works). Then retry with proof:
+#    standard ERC-20 transfer works). Sign "Vouch402 payment proof\n
+#    network: <network>\nresourceId: <resourceId>\ntxHash: <txHash>" with
+#    the paying address (proves you control it, not just that it appears
+#    on-chain -- see docs/TECHNICAL_SPEC.md#payment-proof-signature), then
+#    retry with proof:
 curl https://vouch402.fly.dev/v1/risk-score/0x53a79B109fa77c05B043e73A284a22b57c6263b0 \
-  -H "X-PAYMENT: $(echo -n '{"resourceId":"0x...","txHash":"0x...","payer":"0x...","jurisdictionAttestation":true}' | base64)"
+  -H "X-PAYMENT: $(echo -n '{"resourceId":"0x...","txHash":"0x...","payer":"0x...","signature":"0x...","jurisdictionAttestation":true}' | base64)"
 #    (Or use any x402 v2 client for the standard `exact` scheme; see above.)
 
 # Public, unpaid:

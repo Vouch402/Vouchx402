@@ -7,7 +7,7 @@ import { loadDeployerAccount } from "../src/lib/keystore";
 import { erc20Abi, publicClientFor, httpTransport } from "../src/lib/chain";
 import { env } from "../src/lib/env";
 import { getDb } from "../src/lib/db";
-import type { X402PaymentRequiredBody } from "../src/server/x402";
+import { paymentProofMessage, type X402PaymentRequiredBody } from "../src/server/x402";
 
 /**
  * Phase 4 gate: /v1/metrics reflects real numbers, cross-checked against
@@ -58,10 +58,14 @@ describe("GET /v1/metrics (Base Sepolia)", () => {
     });
     await publicClientFor("base-sepolia").waitForTransactionReceipt({ hash: txHash });
 
+    const signature = await account.signMessage({
+      message: paymentProofMessage(requirement.network, requirement.extra.resourceId, txHash),
+    });
     const proof = {
       resourceId: requirement.extra.resourceId,
       txHash,
       payer: account.address,
+      signature,
       jurisdictionAttestation: true,
     };
     const xPayment = Buffer.from(JSON.stringify(proof)).toString("base64");

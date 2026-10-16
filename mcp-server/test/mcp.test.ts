@@ -10,7 +10,8 @@ import { pay, type X402Requirement } from "vouch402-sdk";
 // package.json "files"), and never hits the live mainnet-only API.
 import { createApp } from "../../src/server/app.js";
 import { loadDeployerAccount } from "../../src/lib/keystore.js";
-import { env } from "../../src/lib/env.js";
+import { env, type NetworkName } from "../../src/lib/env.js";
+import { paymentProofMessage } from "../../src/server/x402.js";
 
 const mcpServerDir = fileURLToPath(new URL("..", import.meta.url));
 
@@ -88,6 +89,7 @@ describe("vouch402-mcp-server (Base Sepolia, real payments, real MCP client)", (
         },
         txHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
         payer: env.payTo,
+        signature: "0xfake",
         jurisdictionAttestation: true,
       },
     });
@@ -113,10 +115,13 @@ describe("vouch402-mcp-server (Base Sepolia, real payments, real MCP client)", (
     // SDK's own pay(), stands in for "the calling agent's own wallet
     // tooling" the design in DECISION_LOG.md assumes.
     const txHash = await pay(quote, account);
+    const signature = await account.signMessage({
+      message: paymentProofMessage(quote.network as NetworkName, quote.extra.resourceId, txHash),
+    });
 
     const scoreResult = await client.callTool({
       name: "fetch_risk_score",
-      arguments: { address, quote, txHash, payer: account.address, baseUrl, jurisdictionAttestation: true },
+      arguments: { address, quote, txHash, payer: account.address, signature, baseUrl, jurisdictionAttestation: true },
     });
     expect(scoreResult.isError).not.toBe(true);
     const data = scoreResult.structuredContent as {

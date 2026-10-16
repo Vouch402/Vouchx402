@@ -4492,3 +4492,296 @@ ni recomienda ninguna transacción. Quien consulta decide."), matching
 the opening of the `disclaimer` string in the API response.
 
 **Not yet done**: mainnet. Nothing here is deployed.
+
+## 2026-10-07: Theft-of-service bug in payment verification — attacker
+could redeem someone else's settled payment against a resourceId of
+their own choosing
+
+**The bug, reported externally**: `verifyPayment` (`src/server/payment.ts`)
+never bound a settlement's `txHash` to the specific `resourceId` the
+caller presented it against. It only checked that the client-claimed
+`payer` field matched the on-chain `Transfer`'s `from` address — and
+`payer` was never anything more than a public on-chain fact, not proof
+of control. Since every quote on a given network shares the same
+`payTo` and flat price (`issueQuote` in `src/server/x402.ts`), an
+attacker who merely observed someone else's public settlement
+transaction (anyone can; Base is a public chain) could request their
+own fresh quote for whatever address *they* wanted scored, then submit
+that quote's `resourceId` together with the victim's `txHash` and the
+victim's (public) address as `payer`. Nothing checked that the caller
+calling with `payer: <victim>` was actually the victim. The attacker's
+request would succeed, and the victim's own later retry against their
+own `resourceId` would then fail on "Payment already processed
+(replay)" — down a payment, and credited with a fulfillment attestation
+for a request they never made.
+
+**Verified real before touching anything**: wrote a reproduction test
+(`test/server.test.ts`, "rejects redeeming another payer's settled tx
+against a different resourceId") that plays out exactly that sequence —
+a real Base Sepolia payment settled against one quote, then redeemed
+against a second, unrelated quote by presenting the same `txHash` and
+the (publicly known) payer address — and ran it against the pre-fix
+code. It returned `200`: the attacker's request succeeded, funded by a
+payment it never made. Only after confirming the exploit was real did
+any fix go in. All of this ran against the local server bound to
+Base Sepolia (`NETWORK=base-sepolia` in `.env`), never against
+production (`vouch402.fly.dev`) or mainnet.
+
+**The fix**: `X-PAYMENT` proofs now carry a `signature` field — an
+EIP-191 personal-sign signature (or an EIP-1271/ERC-6492 equivalent for
+a smart-contract wallet) from `payer`, over the literal string
+`` `Vouch402 payment proof\nnetwork: ${network}\nresourceId: ${resourceId}\ntxHash: ${txHash}` ``.
+`network` is included (added after a review pass on this same fix, below)
+because Base and Base Sepolia can mint the numerically identical
+`resourceId`/`txHash` out of the same bytes32 space — without it, a
+signature produced for one network would also verify on the other.
+`verifyPayment` recovers the signer via viem's `publicClient.verifyMessage`
+(handles EOA, deployed smart-contract wallets, and not-yet-deployed
+ERC-6492-wrapped ones, the same fallback chain viem itself implements)
+and rejects the request if it doesn't match the claimed `payer`, before
+ever hitting the chain for the transaction receipt. This binds the
+proof to the exact `(network, resourceId, txHash)` tuple, so a signature
+produced for one resourceId or network cannot be replayed against
+another, and an observer without the payer's private key cannot forge
+one at all — closing the
+theft-of-service path at its root rather than patching around it (a
+per-quote unique amount was considered and rejected: still only a
+`>=` amount check away from the same class of bug, and does nothing
+for an attacker able to control a quote's own price precision).
+
+Re-ran the reproduction test against the fixed code: the attacker's
+request is now rejected (`402`, invalid-signature), and the victim's
+own legitimate retry still succeeds — the fix doesn't collaterally burn
+the victim's own payment. Every other test touching the payment flow
+(`test/attestation.test.ts`, `test/metrics.test.ts`, `sdk/test/sdk.test.ts`,
+and `scripts/demo.ts`) was updated to sign its proof and re-run for real
+against Base Sepolia; all pass. `mcp-server/test/mcp.test.ts` was
+updated the same way but is **not** independently verified yet: that
+package depends on the *published* `vouch402-sdk` npm package, not this
+workspace's source, so its own build won't pick up the new `signPaymentProof`
+export until `vouch402-sdk` is version-bumped and republished — the
+usual cross-package release coordination this repo already follows (see
+AGENTS.md), not a new gap introduced here. `cli/` needed no source
+changes at all: it calls `vouch402-sdk`'s `getRiskScore`, which now
+signs internally.
+
+**Scope note on the website's "Try It" demo**: `use-risk-score-demo.ts`
+was updated to request a `personal_sign` from the connected Base Account
+after `pay()` settles, using `@base-org/account`'s `createBaseAccountSDK`
+provider directly (`pay()` itself connects-and-disconnects an ephemeral
+provider internally, so this necessarily opens a second one — there is
+no way to reuse the first). This could not be exercised end-to-end here:
+there is no headless way to drive a passkey-based Coinbase Smart Wallet
+in this environment. The code follows the package's documented
+EIP-1193 `personal_sign` shape, but it needs a real browser pass with a
+real wallet before being trusted as live-correct, same "committed is
+not live" discipline as everywhere else in this file. Flagged, not
+hidden.
+
+Updated everywhere the old three-field proof shape was documented as an
+example, so nothing teaches a now-rejected request: `docs/TECHNICAL_SPEC.md`
+(source of truth, re-synced to `web/content/technical-spec.md`),
+`README.md`, `sdk/README.md`, `mcp-server/README.md`,
+`plugins/vouch402.md` (the upstream Base MCP plugin spec), the two web
+components rendering example curl commands, and
+`.claude/skills/mainnet-payment-handoff/SKILL.md` (added the `cast
+wallet sign` step the user runs themselves for a real mainnet payment).
+
+### Review pass (same day): six follow-up items, before anything deploys
+
+The repo owner reviewed the fix above before any of it was committed
+and asked for six things. Recorded here together since none of this
+has shipped yet — this whole section describes draft, uncommitted work.
+
+**1. Nothing committed.** Everything above and below stays unstaged
+until the owner reviews the diff directly. When it does land, it's one
+commit with a clear message, no push without separate sign-off.
+
+**2. Deployment order, because this breaks every existing client.**
+Vouch402 is live on Base mainnet; the already-published `vouch402-sdk`
+and `vouch402-mcp-server` (both `0.3.2` on npm, confirmed via `npm view
+<pkg> version` before touching anything) stop working the moment the
+server starts requiring `signature`. Correct order, and the only
+correct order: publish `vouch402-sdk` first (new major), then
+`vouch402-mcp-server` pointing at it (new major), then deploy the
+server — never the other way, and never a server that accepts both the
+old and new `X-PAYMENT` shape at once (that would just undo the fix: a
+third party could still submit the old, unsigned shape).
+Prepared, not published or deployed (no npm/fly credentials in this
+environment regardless):
+  - `sdk/package.json`: `0.3.2` → `1.0.0`, plus `sdk/CHANGELOG.md`.
+  - `mcp-server/package.json`: `0.3.2` → `1.0.0`, `vouch402-sdk` dependency
+    bumped to `^1.0.0`, the `McpServer` constructor's own version string
+    literal updated too, plus `mcp-server/CHANGELOG.md`.
+  - `cli/package.json`: `0.3.2` → `1.0.0` (kept in step with the other
+    three per this repo's "released together" convention) and its
+    `vouch402-sdk` dependency bumped to `^1.0.0`, plus `cli/CHANGELOG.md`
+    — its own CLI interface doesn't break (signing happens internally),
+    so this is a dependency bump riding along, not a user-facing break.
+  - None of the three `node_modules`/lockfiles were touched: `npm
+    install` against `vouch402-sdk@^1.0.0` can't resolve until it's
+    actually published, so that step has to happen for real, in that
+    order, not be faked here.
+  - Root API `package.json` version (already `1.0.0`, unrelated to this)
+    left alone; this file is its changelog, same as always.
+
+**3. Manual browser test of the live "Try It" demo: not done, and
+could not be done from here.** This environment has no browser-
+automation tool (checked via `ToolSearch` for "browser"/"playwright"/
+"computer use" — nothing came back usable for driving a real page).
+A passkey-based Coinbase Smart Wallet flow in particular has no
+headless equivalent worth trusting. Read `web/src/components/sections/
+try-it.tsx` directly: the live demo currently exposes exactly one
+button, `@base-org/account-ui`'s `BasePayButton`, wired to
+`@base-org/account`'s `pay()` — there is no separate "connect a normal
+EOA wallet" path in this component today. Whether that single button's
+`pay()` → `personal_sign` sequence behaves cleanly for a standard
+browser-extension EOA wallet (not just a Coinbase Smart Wallet passkey)
+is exactly the open question a real browser run would answer, and
+reading the code alone can't. **This gates deployment**: per the
+request, don't ship until someone has actually clicked through both
+cases in a real browser and confirmed the result.
+
+**4. `network` added to the signed message.** Originally just
+`` `Vouch402 payment proof\nresourceId: ...\ntxHash: ...` ``; Base and
+Base Sepolia can mint the identical bytes32 `resourceId`/`txHash` out of
+the same space, so a signature produced on one network would otherwise
+also verify on the other. Now
+`` `Vouch402 payment proof\nnetwork: ${network}\nresourceId: ...\ntxHash: ...` ``,
+propagated through `src/server/x402.ts`, `src/server/payment.ts`,
+`sdk/src/constants.ts` + `client.ts`, `mcp-server/src/index.ts`,
+`web/src/lib/vouch402.ts` + `use-risk-score-demo.ts`, every doc that
+spelled out the literal string, and every test that signs a proof.
+Added `test/server.test.ts`, "rejects a signature produced for a
+different network": signs the real string with `network: "base"` and
+submits it to the Base-Sepolia-bound test server; needs no real
+on-chain payment at all, since the signature check runs before the
+receipt lookup. Re-ran the full real-Base-Sepolia suite after this
+change (`test/server.test.ts` 8/8, `test/attestation.test.ts` 2/2,
+`test/metrics.test.ts` 1/1, `sdk/test/sdk.test.ts` 4/4) — all pass.
+
+**5. The `vestauth.com` dotenv line: confirmed harmless, silenced.**
+`grep -n "vestauth" node_modules/dotenv/lib/main.js` finds it at line 10,
+inside a literal `TIPS` array of eight rotating promotional strings
+dotenv v17 prints on its own (`◈ encrypted .env [www.dotenvx.com]`,
+`⌘ suppress logs { quiet: true }`, etc.) — dotenv's own feature, not a
+third-party injection or anything this project added. Added `quiet:
+true` to both `dotenv.config()` calls in `src/lib/env.ts`; verified
+silent by re-running a test file and grepping its output for
+"injected"/"vestauth"/"tip" — zero matches, versus visible before.
+
+**6. The unmerged `feat/x402-exact` branch (EIP-3009 `exact` scheme,
+`src/server/exact.ts`, commit `aec268d`) has a related but narrower
+gap — read, not fixed, since it isn't part of this fix and isn't
+deployed (confirmed: `git merge-base --is-ancestor aec268d HEAD` →
+not an ancestor; the file doesn't exist on `master`).** The EIP-3009
+authorization itself *is* cryptographically sound — `from` is recovered
+from `recoverTypedDataAddress` over the signed `TransferWithAuthorization`
+typed data, not a client-supplied claim, and the single-use nonce is
+checked both on-chain (`authorizationState`) and in the settlement
+store. But the signed authorization has no field for which Vouch402
+resource (`:address`) it's paying for — EIP-3009's typed-data schema is
+just `from/to/value/validAfter/validBefore/nonce`, nothing app-level.
+`settleExactPayment(verified, address, deps)` takes `address` from
+whichever URL the request arrived on and settles against it with no
+check that it matches whatever the original signer intended; only the
+*recovery* path (`recoverExactSettlement`, for a timed-out receipt retry)
+checks `record.address !== address`. So a valid, unused authorization
+submitted to a *different* `:address` than its signer intended would
+settle fine and serve that different address's score, with the real
+exploit-direct bug's same shape: the resource served isn't bound to
+the authorization's own content. The threat model differs in severity,
+though: the exact-direct bug is exploitable by anyone who can read a
+public block explorer; this one requires getting the `PAYMENT-SIGNATURE`
+header itself (never written to chain or made public) in front of the
+server before the legitimate request lands — a network-interception
+bar, not an open-read one. Flagged for whoever picks `feat/x402-exact`
+back up; not touched here, per the instruction to not spend today's
+time on anything beyond this fix.
+
+## 2026-10-16: Manual browser test passed with a real mainnet payment —
+the fix's one remaining blocker is cleared, plus two real bugs found
+and fixed along the way
+
+The user ran the required manual test of the "Try It" demo (Base
+Account passkey, the only path this demo supports — no EOA-wallet
+alternative exists, confirmed by reading `@base-org/account`'s own
+`getInjectedProvider()`, which only recognizes Coinbase Wallet's own
+in-app browser) against a local checkout of the fix, on **mainnet**
+(not Sepolia — the connected Base Account refused Base Sepolia
+outright with its own "Esta cadena no es compatible" error, so Sepolia
+couldn't be tested from the browser at all; mainnet was used instead,
+a real 0.01 USDC payment, explicitly authorized). Two real bugs
+surfaced before it passed, both now fixed:
+
+**1. Stale-session bug in the web demo itself** (`web/src/hooks/use-
+risk-score-demo.ts`): `@base-org/account`'s SDK persists the connected
+account in `localStorage` (`base-acc-sdk.store`) across SDK instances.
+Creating a second `createBaseAccountSDK()` to request the payment-proof
+signature (separate from `pay()`'s own ephemeral one, which disconnects
+itself) rehydrated as "already connected" from that persisted state
+without ever completing a live handshake with the wallet —
+`eth_requestAccounts` resolved instantly from the stale cache, and the
+following `personal_sign` then failed with a `4100 "not been authorized
+by the user"` error, because there was no real session behind the
+connection. Fixed by calling `provider.disconnect()` immediately before
+`eth_requestAccounts`, forcing a genuine reconnect (a real popup) every
+time. Also added, while debugging: readable error messages (wallet SDK
+rejections are plain `{code, message}` objects, not `Error`s — `String()`
+rendered them as `"[object Object]"`), per-step labels in the thrown
+error path for diagnosis, and a network-mismatch guard (the API quotes
+on its own configured network; paying on whatever the UI selector shows
+instead, if they ever drift apart, would send real funds on the wrong
+chain — this one is worth keeping even though it wasn't the bug this
+session hit).
+
+**2. `verifyPayment` misclassified an RPC outage as an invalid
+signature** (`src/server/payment.ts`): this session's own new signature
+check (see the main entry above) wraps `client.verifyMessage(...)` in a
+try/catch that treated *any* thrown error as "signature invalid" —
+including a transport-level failure of the RPC call itself. The
+mainnet RPC endpoint configured in `.env` turned out to be genuinely
+down (`ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR` / `fetch failed` on every
+call, confirmed directly, not inferred), so every real signature
+verification attempt during testing was failing not because the
+signature was wrong, but because the RPC couldn't be reached at all —
+and the payer would have seen "Invalid payer signature" regardless of
+whether they'd actually done anything wrong. Fixed: the catch now
+re-throws (surfacing as a `500`, the honest answer: "we couldn't check
+this") when the error walks to a `viem` `HttpRequestError` or
+`TimeoutError`, and only falls back to `signatureValid = false` for an
+actual malformed/wrong signature. Verified with a direct script against
+both the dead endpoint (confirmed it throws, now correctly re-thrown as
+an outage) and a live endpoint with a garbage signature (confirmed it
+still resolves to `false`, not an outage).
+
+**Separate, real, already-live production issue, found while chasing
+bug 2 above — not a consequence of this session's own code changes,
+and not yet fixed**: the exact same RPC endpoint is configured in Fly's
+`BASE_RPC_URL` secret and is failing in production too. `fly logs
+--app vouch402` shows a real `eth_getTransactionReceipt` call failing
+with the identical SSL error against tx `0x16346173d509a4df9ae2c0494
+2a0af5176ee885a2d554258acbd60b679141969` at 2026-10-16T06:32:37Z — the
+payer on that tx matches this session's own test wallet, so this was
+very likely one of today's own early test payments (made before the
+local `API_BASE_URL` override was wired up, so it landed on the real
+production server instead of localhost) rather than an outside user's
+money, but the underlying RPC failure is real and currently affects
+*any* real payment landing on production's `verifyPayment`/receipt
+path. The user supplied a new, working QuickNode endpoint (verified
+live via a direct `eth_chainId` call before use, for both mainnet and
+Sepolia) and it's now in the local `.env`; swapping Fly's
+`BASE_RPC_URL`/`BASE_SEPOLIA_RPC_URL` secrets to match, and deciding
+whether the stuck test payment needs any recovery, is still open —
+deliberately not done here since it's a separate production action
+from this fix, not a prerequisite for it.
+
+**With the manual test now passed**, the one remaining blocker on
+`publish → deploy → verify → push` (see `$security-fix-deploy-order`)
+is cleared. Debug-only additions (temporary `console.warn`/`console.log`
+lines, the `web/src/lib/vouch402.ts` env-var override used to point the
+local frontend at the local API, `web/.env.local`) were removed/reverted
+before committing; the revert was verified byte-exact via `diff`
+against a pre-edit backup, not just visually. Full real-chain suite
+re-run clean after cleanup: server 8/8, attestation 2/2, metrics+score+
+wording+exact-unit 61/61, exact-e2e 1/1, sdk 4/4, cli 12/12.

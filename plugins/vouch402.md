@@ -74,8 +74,20 @@ x402-gated. First call, no `X-PAYMENT` header:
   `resourceId` binds a specific payment to this specific quote; it
   expires after `maxTimeoutSeconds`.
 
-- Retry with header `X-PAYMENT: base64(JSON.stringify({ resourceId, txHash, payer, jurisdictionAttestation: true }))`
-  after the transfer confirms. `jurisdictionAttestation` is **required**,
+- Retry with header `X-PAYMENT: base64(JSON.stringify({ resourceId, txHash, payer, signature, jurisdictionAttestation: true }))`
+  after the transfer confirms. `signature` is **required**: an EIP-191
+  personal-sign signature (or an EIP-1271/ERC-6492 equivalent for a
+  smart-contract wallet) produced by `payer`, over the literal string
+  `` `Vouch402 payment proof\nnetwork: ${network}\nresourceId: ${resourceId}\ntxHash: ${txHash}` ``
+  (`network` is the CAIP-2-free form, e.g. `base` or `base-sepolia` --
+  included so a signature can't be lifted from one network and replayed
+  on the other, since both can mint the numerically identical
+  resourceId/txHash). Every quote on a given network shares the same `payTo`/price, so
+  `payer` alone is just a public on-chain fact (anyone can read who sent
+  a given `Transfer`); without this signature a third party who observed
+  someone else's settlement transaction could redeem it against a
+  resourceId of their own choosing. The server recovers the signer and
+  rejects the request if it doesn't match `payer`. `jurisdictionAttestation` is **required**,
   strictly `true` (not merely truthy): it certifies the caller (and
   whoever it's acting for) is not located in, and is not paying on behalf
   of anyone in, a Tier 1 restricted jurisdiction (see `## Risks &
@@ -114,13 +126,14 @@ the signer is recovered from the signature itself and must match the
 3. Get the caller's wallet address (`get_wallets`).
 4. Submit the payment via `send_calls`: one call, `{ to: asset, value: "0", data: <encoded transfer(payTo, maxAmountRequired)> }`, on `network`.
 5. Wait for the payment call to confirm; capture its transaction hash.
-6. `GET` the same resource URL again, with header `X-PAYMENT: base64(JSON.stringify({ resourceId, txHash, payer: <caller's address>, jurisdictionAttestation: true }))`.
-7. On `200`, return `score`/`signals`/`attestationUid` to the user. On `402`, surface the reason (don't silently retry with a stale quote; go back to step 2 for a fresh one). On `403`, stop: this is not retryable with the same payload, see `## Risks & Warnings`.
+6. Sign the literal string `` `Vouch402 payment proof\nnetwork: ${network}\nresourceId: ${resourceId}\ntxHash: ${txHash}` `` with the caller's wallet (`sign`), using the network from step 2's quote, the resourceId from step 2, and the txHash from step 5.
+7. `GET` the same resource URL again, with header `X-PAYMENT: base64(JSON.stringify({ resourceId, txHash, payer: <caller's address>, signature: <step 6>, jurisdictionAttestation: true }))`.
+8. On `200`, return `score`/`signals`/`attestationUid` to the user. On `402`, surface the reason (don't silently retry with a stale quote; go back to step 2 for a fresh one — a stale quote's `resourceId` also invalidates any signature produced for it). On `403`, stop: this is not retryable with the same payload, see `## Risks & Warnings`.
 
 ## Submission
 
 `send_calls`: a single unsigned call for the USDC payment (step 4 above): `{ to: <accepts[0].asset>, value: "0", data: encodeFunctionData({ abi: erc20TransferAbi, functionName: "transfer", args: [accepts[0].payTo, BigInt(accepts[0].maxAmountRequired)] }) }`, on `accepts[0].network`. The actual resource fetch (before and after payment) is plain HTTP, not a Base MCP submission: `## Surface Routing` covers how that HTTP call itself is made per surface.
-For `POST /v1/disputes`, `sign` produces the personal-sign signature described in `## Endpoints`; the dispute submission itself is a plain HTTP POST, not a Base MCP write.
+For `POST /v1/disputes` and for the payment-proof `signature` above (step 6), `sign` produces the personal-sign signature described in `## Endpoints`; the dispute submission and the resource retry itself are plain HTTP, not a Base MCP write.
 
 ## Example Prompts
 

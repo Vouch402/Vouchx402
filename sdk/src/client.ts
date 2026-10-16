@@ -2,7 +2,7 @@ import { createWalletClient, createPublicClient, http, encodeFunctionData, type 
 import { base, baseSepolia } from "viem/chains";
 import { createRequire } from "node:module";
 import { JsonRpcProvider } from "ethers";
-import { DEFAULT_API_BASE_URL, EAS_ADDRESS, erc20TransferAbi, rpcUrlFor } from "./constants.js";
+import { DEFAULT_API_BASE_URL, EAS_ADDRESS, erc20TransferAbi, paymentProofMessage, rpcUrlFor } from "./constants.js";
 import type { FulfillmentAttestation, Network, PaymentProof, RiskScoreResult, X402Requirement } from "./types.js";
 
 // eas-sdk's package.json "exports" routes ESM importers to its lib.esm
@@ -58,6 +58,23 @@ export async function pay(quote: X402Requirement, signer: Account): Promise<`0x$
   return txHash;
 }
 
+/** Signs the proof the server will verify the `payer` actually controls
+ * (see `paymentProofMessage`): required so the server can't be handed a
+ * `payer` address that's merely public on-chain info (anyone can read
+ * who sent a given Transfer) rather than proof of control over it. Uses
+ * a wallet client's `signMessage` action rather than calling
+ * `signer.signMessage` directly so this works for both local accounts
+ * and JSON-RPC/smart-wallet accounts the same way `pay()` already does. */
+export async function signPaymentProof(
+  quote: X402Requirement,
+  signer: Account,
+  txHash: string
+): Promise<`0x${string}`> {
+  const chain = chainFor(quote.network);
+  const walletClient = createWalletClient({ account: signer, chain, transport: http(rpcUrlFor(quote.network)) });
+  return walletClient.signMessage({ message: paymentProofMessage(quote.network, quote.extra.resourceId, txHash) });
+}
+
 export interface FetchScoreOptions extends GetQuoteOptions {
   /** How many times to retry on a 402 specifically (the server's own
    * "not confirmed yet, retry shortly" signal for a freshly-settled
@@ -83,6 +100,7 @@ export async function fetchScore(
   quote: X402Requirement,
   txHash: string,
   payer: string,
+  signature: string,
   options: FetchScoreOptions
 ): Promise<RiskScoreResult> {
   const baseUrl = options.baseUrl ?? DEFAULT_API_BASE_URL;
@@ -93,6 +111,7 @@ export async function fetchScore(
     resourceId: quote.extra.resourceId,
     txHash,
     payer,
+    signature,
     makePublic: options.makePublic,
     jurisdictionAttestation: options.jurisdictionAttestation,
   };
@@ -176,7 +195,8 @@ export async function getRiskScore(
 ): Promise<GetRiskScoreResult> {
   const quote = await getQuote(address, options);
   const txHash = await pay(quote, signer);
-  const result = await fetchScore(address, quote, txHash, signer.address, options);
+  const signature = await signPaymentProof(quote, signer, txHash);
+  const result = await fetchScore(address, quote, txHash, signer.address, signature, options);
   const attestation = options.skipVerification
     ? undefined
     : await verifyAttestation(result.attestationUid, quote.network, options);

@@ -16,7 +16,7 @@ import { env, explorerBaseFor } from "../src/lib/env";
 import { registerSchemas } from "../src/attestation/schemas";
 import { getEas, getAttestationWithRetry } from "../src/lib/eas";
 import { disputeMessage, DisputeReasonCode } from "../src/attestation/dispute";
-import type { X402PaymentRequiredBody } from "../src/server/x402";
+import { paymentProofMessage, type X402PaymentRequiredBody } from "../src/server/x402";
 
 function step(n: number, label: string) {
   console.log(`\n[${n}] ${label}`);
@@ -71,10 +71,14 @@ async function main() {
     // web/content/legal-*.md, "Restricted Jurisdictions". This demo runs
     // against the project's own funded dev wallet, not a real end user,
     // so attesting true here is accurate.
+    const paymentSignature = await account.signMessage({
+      message: paymentProofMessage(requirement.network, requirement.extra.resourceId, txHash),
+    });
     const proof = {
       resourceId: requirement.extra.resourceId,
       txHash,
       payer: account.address,
+      signature: paymentSignature,
       jurisdictionAttestation: true,
     };
     const xPayment = Buffer.from(JSON.stringify(proof)).toString("base64");

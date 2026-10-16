@@ -40,14 +40,14 @@ function errorResult(message: string) {
   return { content: [{ type: "text" as const, text: message }], isError: true };
 }
 
-const server = new McpServer({ name: "vouch402", version: "0.3.2" });
+const server = new McpServer({ name: "vouch402", version: "1.0.0" });
 
 server.registerTool(
   "get_payment_quote",
   {
     title: "Get a Vouch402 payment quote",
     description:
-      "Get the x402 payment requirements for a risk score on a Base address. Returns an unsigned quote: pay maxAmountRequired of the asset token to payTo on the given network yourself, then call fetch_risk_score with the resulting transaction hash. This tool never pays on your behalf.",
+      "Get the x402 payment requirements for a risk score on a Base address. Returns an unsigned quote: pay maxAmountRequired of the asset token to payTo on the given network yourself, then call fetch_risk_score with the resulting transaction hash and a signature proving you control the paying address. This tool never pays on your behalf.",
     inputSchema: {
       address: addressSchema.describe("The Base address to evaluate"),
       baseUrl: z.string().optional().describe("Override the Vouch402 API base URL (defaults to the live mainnet instance)"),
@@ -57,7 +57,7 @@ server.registerTool(
     try {
       const quote = await getQuote(address, { baseUrl });
       return textResult(
-        `Pay ${quote.maxAmountRequired} of ${quote.asset} to ${quote.payTo} on ${quote.network}, then call fetch_risk_score with this same quote, the resulting txHash, and the paying address.`,
+        `Pay ${quote.maxAmountRequired} of ${quote.asset} to ${quote.payTo} on ${quote.network}, then call fetch_risk_score with this same quote, the resulting txHash, the paying address, and a signature from that address over "Vouch402 payment proof\\nnetwork: ${quote.network}\\nresourceId: ${quote.extra.resourceId}\\ntxHash: <txHash>".`,
         quote as unknown as Record<string, unknown>
       );
     } catch (err) {
@@ -77,6 +77,15 @@ server.registerTool(
       quote: z.object(quoteShape).describe("The exact quote object returned by get_payment_quote"),
       txHash: z.string().describe("The transaction hash of the on-chain payment you submitted"),
       payer: z.string().describe("The address that sent the payment"),
+      signature: z
+        .string()
+        .describe(
+          'An EIP-191 personal-sign signature (or an EIP-1271/ERC-6492 equivalent for a smart-contract wallet) ' +
+            "produced by `payer`, over the exact string " +
+            '`Vouch402 payment proof\\nnetwork: ${network}\\nresourceId: ${resourceId}\\ntxHash: ${txHash}`. ' +
+            "Proves you actually control `payer` rather than merely having observed its address on-chain; the " +
+            "server rejects the request outright without a valid one."
+        ),
       baseUrl: z.string().optional().describe("Override the Vouch402 API base URL, must match the one used for the quote"),
       makePublic: z
         .boolean()
@@ -91,9 +100,9 @@ server.registerTool(
         ),
     },
   },
-  async ({ address, quote, txHash, payer, baseUrl, makePublic, jurisdictionAttestation }) => {
+  async ({ address, quote, txHash, payer, signature, baseUrl, makePublic, jurisdictionAttestation }) => {
     try {
-      const result = await fetchScore(address, quote as X402Requirement, txHash, payer, {
+      const result = await fetchScore(address, quote as X402Requirement, txHash, payer, signature, {
         baseUrl,
         makePublic,
         jurisdictionAttestation,

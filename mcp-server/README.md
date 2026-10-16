@@ -27,7 +27,9 @@ question: how should the standalone MCP server pay?"
 
 **The tradeoff, stated plainly**: this server is only useful to a
 caller that already has its own way to sign and submit an on-chain
-USDC transfer. If your MCP client has no wallet tooling at all, this
+USDC transfer, and to sign a short message proving it controls the
+paying address (see `fetch_risk_score`'s `signature` parameter below).
+If your MCP client has no wallet tooling at all, this
 server can't pay on your behalf, by design; use the
 [CLI](../cli) instead, which does hold a (keystore-encrypted, never
 raw) key for exactly that single-user, run-it-yourself case.
@@ -37,11 +39,17 @@ raw) key for exactly that single-user, run-it-yourself case.
 - **`get_payment_quote(address, baseUrl?)`**: returns the unsigned x402
   payment requirements for scoring `address` (amount, asset, `payTo`,
   network). Pay it yourself, with your own wallet.
-- **`fetch_risk_score(address, quote, txHash, payer, jurisdictionAttestation, baseUrl?, makePublic?)`**:
+- **`fetch_risk_score(address, quote, txHash, payer, signature, jurisdictionAttestation, baseUrl?, makePublic?)`**:
   takes the quote you got back and the transaction hash of your
   payment, retries until the server confirms it, then independently
   resolves the resulting attestation against EAS directly (not the
-  API's own claim) before returning the score. `makePublic` (default
+  API's own claim) before returning the score. `signature` is an
+  EIP-191 personal-sign signature (or an EIP-1271/ERC-6492 equivalent
+  for a smart-contract wallet) from `payer` over
+  `` `Vouch402 payment proof\nnetwork: ${quote.network}\nresourceId: ${quote.extra.resourceId}\ntxHash: ${txHash}` ``,
+  proving you actually control `payer` rather than just having observed
+  its address on-chain; the server rejects the request without one.
+  `makePublic` (default
   `false`) opts this specific result into Vouch402's public activity
   feed (address, score, and signals shown in full); otherwise the
   result stays attestation-only, same as before this option existed.

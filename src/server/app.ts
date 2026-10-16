@@ -326,7 +326,9 @@ export function createApp(options: AppOptions = {}): Express {
     try {
       proof = decodePaymentHeader(paymentHeader!);
     } catch {
-      res.status(400).json({ error: "Malformed X-PAYMENT header: expected base64 JSON { resourceId, txHash, payer }" });
+      res
+        .status(400)
+        .json({ error: "Malformed X-PAYMENT header: expected base64 JSON { resourceId, txHash, payer, signature }" });
       return;
     }
 

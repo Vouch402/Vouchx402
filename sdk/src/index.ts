@@ -1,6 +1,7 @@
 export {
   getQuote,
   pay,
+  signPaymentProof,
   fetchScore,
   verifyAttestation,
   getRiskScore,
@@ -18,6 +19,7 @@ export {
   chainIdFor,
   rpcUrlFor,
   easExplorerUrl,
+  paymentProofMessage,
 } from "./constants.js";
 
 export type {

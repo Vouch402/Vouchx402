@@ -129,6 +129,25 @@ export interface RiskScoreResult {
   attestationUid: string;
 }
 
+/** The exact message the API's `verifyPayment` recovers the payer from
+ * (see `paymentProofMessage` in src/server/x402.ts) -- kept in sync by
+ * hand, same duplication pattern as the rest of this file. */
+export function paymentProofMessage(network: ApiNetwork, resourceId: string, txHash: string): string {
+  return `Vouch402 payment proof\nnetwork: ${network}\nresourceId: ${resourceId}\ntxHash: ${txHash}`;
+}
+
+/** `personal_sign`'s EIP-1193 wire format takes the message as a hex
+ * string, not raw text. Hand-rolled (no viem dependency on this side of
+ * the repo, same reasoning as `formatUsdcAtomic` above) via the
+ * browser-native TextEncoder rather than Buffer, which isn't available
+ * unpolyfilled in this runtime. */
+export function toHexMessage(message: string): `0x${string}` {
+  const bytes = new TextEncoder().encode(message);
+  let hex = "";
+  for (const byte of bytes) hex += byte.toString(16).padStart(2, "0");
+  return `0x${hex}`;
+}
+
 /** USDC is always 6 decimals: a hand-rolled atomic-to-decimal-string
  * conversion avoids pulling in viem just for this one function on the
  * frontend, which otherwise has no need for it. */
@@ -168,6 +187,10 @@ export async function fetchRiskScoreWithProof(
     resourceId: string;
     txHash: string;
     payer: string;
+    /** See `paymentProofMessage`: an EIP-191/ERC-6492 signature over it,
+     * produced by `payer`. Required -- the API rejects a payment proof
+     * without one, see DECISION_LOG.md. */
+    signature: string;
     makePublic?: boolean;
     /** Required: see the "Restricted Jurisdictions" attestation checkbox in try-it.tsx. */
     jurisdictionAttestation: boolean;

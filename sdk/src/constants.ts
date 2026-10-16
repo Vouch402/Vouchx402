@@ -28,6 +28,14 @@ export function easExplorerUrl(network: Network, uid: string): string {
   return `https://${network}.easscan.org/attestation/view/${uid}`;
 }
 
+/** The exact message `PaymentProof.signature` must sign over. Mirrors
+ * `paymentProofMessage` in the main repo's `src/server/x402.ts` byte for
+ * byte -- verifyPayment recovers the signer from this same string, so
+ * any drift here means every payment fails signature verification. */
+export function paymentProofMessage(network: Network, resourceId: string, txHash: string): string {
+  return `Vouch402 payment proof\nnetwork: ${network}\nresourceId: ${resourceId}\ntxHash: ${txHash}`;
+}
+
 /** Minimal ERC-20 ABI, just the one function this SDK ever calls. */
 export const erc20TransferAbi = [
   {

@@ -33,12 +33,13 @@ API's own claim of what it attested.
 ### Step by step
 
 ```ts
-import { getQuote, pay, fetchScore, verifyAttestation } from "vouch402-sdk";
+import { getQuote, pay, signPaymentProof, fetchScore, verifyAttestation } from "vouch402-sdk";
 
-const quote = await getQuote(address);           // parses the 402 body
-const txHash = await pay(quote, account);         // on-chain USDC transfer
-const result = await fetchScore(address, quote, txHash, account.address, {
-  jurisdictionAttestation: true,                  // required, see below
+const quote = await getQuote(address);                       // parses the 402 body
+const txHash = await pay(quote, account);                     // on-chain USDC transfer
+const signature = await signPaymentProof(quote, account, txHash); // proves you control account.address
+const result = await fetchScore(address, quote, txHash, account.address, signature, {
+  jurisdictionAttestation: true,                              // required, see below
 });
 const attestation = await verifyAttestation(result.attestationUid, quote.network);
 ```
@@ -50,6 +51,15 @@ freshly-settled payment can briefly look unconfirmed to whichever
 public RPC node the server's next read happens to land on.
 `verifyAttestation` is a plain read against EAS: no signer or key
 needed, since it's not submitting anything on-chain.
+
+`signPaymentProof` is required: every quote on a given network shares
+the same `payTo`/price, so `payer` by itself is just a public on-chain
+fact (anyone can read who sent a given Transfer). Without a signature
+binding the proof to this exact `(resourceId, txHash)` pair, a third
+party who observed someone else's public settlement transaction could
+redeem it against a resourceId of their own choosing. `getRiskScore`
+calls this internally; only `fetchScore` used directly needs it passed
+in by hand.
 
 ### Jurisdiction attestation (required)
 
@@ -106,8 +116,10 @@ the complete, independently-verified contract list.
   payment requirements.
 - `pay(quote, signer)`: submit the on-chain USDC transfer for a quote.
   Returns the transaction hash.
-- `fetchScore(address, quote, txHash, payer, options?)`: retry the
-  resource request with proof of payment attached until it resolves.
+- `signPaymentProof(quote, signer, txHash)`: sign proof that `signer`
+  controls the paying address, required by `fetchScore`.
+- `fetchScore(address, quote, txHash, payer, signature, options?)`: retry
+  the resource request with proof of payment attached until it resolves.
 - `verifyAttestation(attestationUid, network, options?)`: resolve a
   fulfillment attestation directly from EAS.
 - `getRiskScore(address, signer, options?)`: the full flow in one call.

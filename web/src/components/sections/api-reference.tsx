@@ -17,9 +17,11 @@ const ENDPOINTS = [
     curl: `# 1. Ask without payment, get the exact x402 price + resourceId back as a 402
 curl ${API_BASE_URL}/v1/risk-score/0x53a79B109fa77c05B043e73A284a22b57c6263b0
 
-# 2. Pay the quoted USDC amount on-chain, then retry with proof of payment
+# 2. Pay the quoted USDC amount on-chain, sign "Vouch402 payment proof\\n
+#    network: <network>\\nresourceId: <resourceId>\\ntxHash: <txHash>" with
+#    the paying address, then retry with proof of payment
 curl ${API_BASE_URL}/v1/risk-score/0x53a79B109fa77c05B043e73A284a22b57c6263b0 \\
-  -H "X-PAYMENT: $(echo -n '{"resourceId":"...","txHash":"0x...","payer":"0x..."}' | base64)"`,
+  -H "X-PAYMENT: $(echo -n '{"resourceId":"...","txHash":"0x...","payer":"0x...","signature":"0x..."}' | base64)"`,
   },
   {
     key: "metrics",

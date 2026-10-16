@@ -78,10 +78,35 @@ export function issueQuote(network: NetworkName, address: string, resourcePath: 
   };
 }
 
+/**
+ * The exact message a payer must EIP-191-sign (or EIP-1271/ERC-6492
+ * equivalent for a smart-contract wallet) to prove they, not merely
+ * someone who observed their public on-chain transfer, are presenting
+ * this payment proof. Binds `network` (so a signature for a Base Sepolia
+ * resourceId/txHash can't be replayed on mainnet, or vice versa -- both
+ * networks can mint the same bytes32 resourceId/txHash space), `resourceId`
+ * (which quote this redeems), and `txHash` (which settlement it points
+ * to): without this, any observer of a public USDC transfer to the
+ * shared `payTo` address could mint their own resourceId and redeem
+ * someone else's payment against it -- see `verifyPayment`'s doc comment
+ * in `payment.ts` and DECISION_LOG.md for the real exploit this closes.
+ */
+export function paymentProofMessage(network: NetworkName, resourceId: string, txHash: string): string {
+  return `Vouch402 payment proof\nnetwork: ${network}\nresourceId: ${resourceId}\ntxHash: ${txHash}`;
+}
+
 export interface PaymentProof {
   resourceId: string;
   txHash: string;
   payer: string;
+  /**
+   * EIP-191 personal-sign signature (or an EIP-1271/ERC-6492 equivalent
+   * for a smart-contract wallet) over `paymentProofMessage(network,
+   * resourceId, txHash)`, produced by the `payer` address. Proves the
+   * caller actually controls `payer` rather than just having observed
+   * its address in a public Transfer log.
+   */
+  signature: string;
   /**
    * Opt-in only: makes this specific result (address, score, signals)
    * visible on the public activity feed. Defaults to private (see
@@ -110,8 +135,8 @@ export interface PaymentProof {
 export function decodePaymentHeader(headerValue: string): PaymentProof {
   const json = Buffer.from(headerValue, "base64").toString("utf8");
   const parsed = JSON.parse(json);
-  if (!parsed.resourceId || !parsed.txHash || !parsed.payer) {
-    throw new Error("Malformed X-PAYMENT header: expected { resourceId, txHash, payer }");
+  if (!parsed.resourceId || !parsed.txHash || !parsed.payer || !parsed.signature) {
+    throw new Error("Malformed X-PAYMENT header: expected { resourceId, txHash, payer, signature }");
   }
   return {
     ...parsed,

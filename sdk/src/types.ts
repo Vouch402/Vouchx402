@@ -48,6 +48,16 @@ export interface PaymentProof {
   resourceId: string;
   txHash: string;
   payer: string;
+  /** EIP-191 personal-sign signature (or an EIP-1271/ERC-6492 equivalent
+   * for a smart-contract wallet) over
+   * `` `Vouch402 payment proof\nnetwork: ${network}\nresourceId: ${resourceId}\ntxHash: ${txHash}` ``,
+   * produced by `payer`. Proves the caller actually controls `payer`
+   * rather than merely having observed its address in a public on-chain
+   * Transfer log -- required since every quote on a given network shares
+   * the same `payTo`/price (see `paymentProofMessage` in the main repo's
+   * `src/server/x402.ts`, and DECISION_LOG.md for the exploit this
+   * closes). */
+  signature: string;
   /** Opt-in only: makes this result visible on Vouch402's public
    * activity feed (address, score, and signals). Omitted or false
    * keeps the default: attestation-only, no visible signals. See the

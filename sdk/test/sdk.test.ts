@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type { Server } from "node:http";
-import { getQuote, pay, fetchScore, verifyAttestation, getRiskScore } from "../src/index.js";
+import { getQuote, pay, signPaymentProof, fetchScore, verifyAttestation, getRiskScore } from "../src/index.js";
 // Test-only reuse of the main repo's own server + funded testnet wallet
 // (never shipped in the published package, see package.json "files").
 // The live vouch402.fly.dev deployment is mainnet-only post-cutover, so
@@ -72,11 +72,19 @@ describe("vouch402-sdk (Base Sepolia, real payments)", () => {
 
     const quote = await getQuote(address, { baseUrl });
     const txHash = await pay(quote, account);
-    const first = await fetchScore(address, quote, txHash, account.address, { baseUrl, jurisdictionAttestation: true });
+    const signature = await signPaymentProof(quote, account, txHash); // signs over (network, resourceId, txHash)
+    const first = await fetchScore(address, quote, txHash, account.address, signature, {
+      baseUrl,
+      jurisdictionAttestation: true,
+    });
     expect(first.score).toBeGreaterThanOrEqual(0);
 
     await expect(
-      fetchScore(address, quote, txHash, account.address, { baseUrl, maxAttempts: 1, jurisdictionAttestation: true })
+      fetchScore(address, quote, txHash, account.address, signature, {
+        baseUrl,
+        maxAttempts: 1,
+        jurisdictionAttestation: true,
+      })
     ).rejects.toThrow();
   }, 60_000);
 

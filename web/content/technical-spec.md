@@ -186,10 +186,13 @@ Every paid request is verified server-side before the resource is released:
 
 1. Reject if the payment/transaction ID has already been processed (replay
    protection).
-2. Confirm the payment status is settled/completed.
-3. Confirm the paying address matches the request's claimed payer.
-4. Confirm amount and recipient match what was quoted in the `402` response.
-5. Mark the payment as processed **before** returning the resource.
+2. Confirm the claimed payer actually signed this specific (`resourceId`,
+   `txHash`) pair (EIP-191, or EIP-1271/ERC-6492 for a smart-contract
+   wallet) — see "Payment proof signature" below.
+3. Confirm the payment status is settled/completed.
+4. Confirm the paying address matches the request's claimed payer.
+5. Confirm amount and recipient match what was quoted in the `402` response.
+6. Mark the payment as processed **before** returning the resource.
 
 For the standard `exact` scheme, the server settles the payer's signed
 payment to our own treasury only if every one of these holds, all checked
@@ -212,6 +215,36 @@ other than a paid request for this resource: one authorization pays for
 exactly one request.
 
 Frontend-reported payment confirmation is never trusted on its own.
+
+### Payment proof signature
+
+Every quote on a given network shares the same `payTo` and flat price (see
+the `402` response above), so a `payer` field by itself is only a public
+on-chain fact — anyone can read who sent a given `Transfer` from a block
+explorer. Without step 2 above, an observer of someone else's public
+settlement transaction could mint their own `resourceId` and redeem that
+victim's payment against it, obtaining a result for whatever address *they*
+chose while the victim's own genuine retry died on "already processed."
+See `DECISION_LOG.md` for the real exploit this closed.
+
+The `X-PAYMENT` proof therefore carries a `signature` field: an EIP-191
+personal-sign signature (or an EIP-1271/ERC-6492 equivalent for a
+smart-contract wallet) over the exact string
+
+```
+Vouch402 payment proof
+network: <network>
+resourceId: <resourceId>
+txHash: <txHash>
+```
+
+produced by the `payer` address, binding the proof to exactly this
+(`network`, `resourceId`, `txHash`) tuple. `network` is included because
+Base and Base Sepolia can mint the numerically identical `resourceId`/
+`txHash` out of the same bytes32 space — without it, a signature produced
+for one network would also verify for the other. This means the
+signature cannot be lifted from one resourceId and replayed against
+another, or carried over from one network to the other.
 
 ## x402-SAP: attestation schemas (EAS, deployed on Base)
 
